@@ -6,6 +6,7 @@ It compiles on the command line (although that will be slowest):
  root -l src/gates.cpp+ src/channels.cpp+ src/analyser.cpp+ src/analysis.cpp+ fntsort.cpp+
 
 Example output:
+
 gon@Glaptop:/mnt/d/fnt/macros/git/FNT2$ root -l src/gates.cpp+ src/channels.cpp+ src/analyser.cpp+ src/analysis.cpp+ fntsort.cpp++
 root [0]
 Processing src/gates.cpp+...
@@ -31,4 +32,5 @@ Moving histograms to time_adjCfolder ...
 Moving histograms to nrj_adjCfolder ...
 Moving histograms to nrj2_adjCfolder ...
 Analysis complete!
-root [5] 
+root [5]
+ 
