@@ -1,0 +1,21 @@
+2-D	Name	X:Bins	Min	Max	Y:Bins	Min	Max
+0 = 1-D, 1 = 2-D, -x = x 1-D histograms (remember all singular 1-D end in '0'!)
+0	HitPattern					256	0	256
+0	HitPatternNeutrons	256	0	256
+0	neutronfluxatx	5000	0	250000
+0	neutronfluxatr	1500	0	15000
+-255 timeC			5000	-5000	450000
+-255 nrjC				1000			0	1000000
+-255 nrj2C			1000			0	1000000
+-255 time_adjC	5000	-5000	450000
+-255 nrj_adjC		1000			0	1000000
+-255 nrj2_adjC	1000			0	1000000
+1	timeVchan	4000	0	400000	256	0	256
+1	nrjVchan	1000	0	1000000	256	0	256
+1	nrj2Vchan	1000	0	1000000	256	0	256
+1	timeadjVchan	4000	0	400000	256	0	256
+1	nrjadjVchan	1000	0	1000000	256	0	256
+1	nrj2adjVchan	1000	0	1000000	256	0	256
+1	xVtime				10000	2e14	2e15	5000	0	250000
+1	rVtime				10000	2e14	2e15	1500	0	15000
+1	neutronfluxatrx	5000	0	250000	1500	0	15000
