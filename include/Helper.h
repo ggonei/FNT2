@@ -18,7 +18,7 @@ class Helper {	//	object for channels
 		Helper(ULong64_t n = 0, double advamount = 0.01) { entries = n; increment = advamount * n, countdownN = increment; }	//	default constructor
 		~Helper() {}	//	destructor
 		
-		void resetcountdown() { percent = 0; countdownN = increment; }	//	reset countdown
+		void resetCountdown() { percent = 0; countdownN = increment; }	//	reset countdown
 		void countdown();	//	print progress
 		string sanitiser(string s);	//	sanitise histogram names
 

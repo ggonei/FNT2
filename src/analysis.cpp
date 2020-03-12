@@ -12,6 +12,7 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 	Channel* c;	//	allocate channel pointer
 	Int_t npixel;	//	get reset value for progress counter
+	f->helper->resetCountdown();	//	reset countdown in case it has been used prior
 
 	for( ULong64_t i = 0; i < n; i++ ) {	//	loop over all entries
 
