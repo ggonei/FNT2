@@ -5,13 +5,12 @@
 //
 #ifndef ANALYSIS_H
 #define ANALYSIS_H
-#include "../include/analyser.h"
+#include "../include/FNT.h"
 
 //	ROOT libraries
 #include "TCanvas.h"
 #include "THStack.h"
 #include "TLegend.h"
-#include "TROOT.h"
 
 namespace fnt {	//	create unique working area
 
@@ -35,13 +34,14 @@ class analysis {	//	main analysis object
 			chanX = f->getChanX();	//	get xpos channel
 			gmc = f->getMaxChannels();	//	get maximum channel
 			do_analysis(f);	//	do analysis
-			newHists->Close();
+			newHists->Close();	//	close working file
+			TFile::Open(f->getHFilename());	//	reopen histograms file
 			std::cout << "Analysis complete!" << std::endl;	//	inform user
 		}	//	end default constructor
 		~analysis() {}	//	destructor
 
 		void do_analysis(fnt::FNT* f);	//	analysis function
-		void colourful_hp();	//	colourful hit pattern
+		void colourful_hp(TTree* bigTree);	//	colourful hit pattern
 
 
 	private:

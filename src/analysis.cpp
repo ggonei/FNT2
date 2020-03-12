@@ -10,8 +10,9 @@ namespace fnt {	//	create unique working area
 
 void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
+	Channel* c;	//	allocate channel pointer
 	ULong64_t increment = 0.01 * n, countdown = increment;	//	get percentage increment
-	Int_t percent = 0;	//	get reset value for progress counter
+	Int_t percent = 0, npixel;	//	get reset value for progress counter
 
 	for( ULong64_t i = 0; i < n; i++ ) {	//	loop over all entries
 
@@ -26,16 +27,21 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 		
 		bigTree->GetEntry(i);	//	grab energy info
 		il = (Int_t) label;	//	convert label to integer
+		c = f->getChannel(il);	//	set channel
 		f->getH1("HitPattern0")->Fill(il);	//	hit pattern
 
-		if( il < f->getMaxChannels() ) {	//	do not waste time in needless checks
+		if( c ) {	//	skip unknown channels
 
 			f->getH1("timeC" + to_string(il))->Fill((timeb-timeLastB)%bpt);	//	add to time histogram
 			f->getH1("nrjC" + to_string(il))->Fill(nrj);	//	add to nrj histogram
 			f->getH1("nrj2C" + to_string(il))->Fill(nrj2);	//	add to nrj2 histogram
 
-			if(il>10&&il<90&&(il%10>0&&il%10<9))	{	//	neutron gate
+			npixel = c->getPixelNumber();	//	store pixel
 
+			if( npixel > -1 )	{	//	neutron gate alternatively il>10&&il<90&&(il%10>0&&il%10<9)
+
+				f->getH2("timeVneutrons")->Fill((timeb-timeLastB)%bpt, il);	//	neutron channels V time
+				f->getH2("pixels")->Fill(floor(npixel/8), npixel%8);	//	fill hit pattern
 if(il==55)	{
 				f->getH1("HitPatternNeutrons0")->Fill(il);	//	neutrons hit pattern
 				f->getH1("neutronfluxatx0")->Fill(xPos);	//	intensity of neutrons at x
@@ -61,18 +67,14 @@ if(il==55)	{
 				
 			}	//	end doing stuff with theta
 
-			if( f->getChannel(il) != NULL ) {	//	check there is a known channel to work with
+			f->getH1("timeadjC" + to_string(il))->Fill((timeb-timeLastB-(c->getTOffset()))%bpt);	//	add to adjusted time histogram
+			f->getH1("nrjadjC" + to_string(il))->Fill( c->adjE(nrj) );	//	add to adjusted nrj histogram
+			f->getH1("nrj2adjC" + to_string(il))->Fill( c->adjE(nrj2) );	//	add to adjusted nrj2 histogram
+			f->getH2("timeadjVchan")->Fill((timeb-timeLastB-(c->getTOffset()))%bpt, il);	//	channel V time
+			f->getH2("nrjadjVchan")->Fill(c->adjE(nrj), il);	//	nrj V time
+			f->getH2("nrj2adjVchan")->Fill(c->adjE(nrj2), il);	//	nrj2 V time
 
-				f->getH1("timeadjC" + to_string(il))->Fill((timeb-timeLastB-(f->getChannel(il)->getTOffset()))%bpt);	//	add to adjusted time histogram
-				f->getH1("nrjadjC" + to_string(il))->Fill( f->getChannel(il)->adjE(nrj) );	//	add to adjusted nrj histogram
-				f->getH1("nrj2adjC" + to_string(il))->Fill( f->getChannel(il)->adjE(nrj2) );	//	add to adjusted nrj2 histogram
-				f->getH2("timeadjVchan")->Fill((timeb-timeLastB-(f->getChannel(il)->getTOffset()))%bpt, il);	//	channel V time
-				f->getH2("nrjadjVchan")->Fill(f->getChannel(il)->adjE(nrj), il);	//	nrj V time
-				f->getH2("nrj2adjVchan")->Fill(f->getChannel(il)->adjE(nrj2), il);	//	nrj2 V time
-
-			}	//	check there is a known channel to work with
-
-		}	//	end maximum channel check
+		}	//	end valid channel check
 
 	}	//	end loop over all entries
 
@@ -80,17 +82,23 @@ if(il==55)	{
 
 	TDirectory* d;	//	hold value for directories
 	TH1F* h;	//	hold value for histogram to move
+	std::string s;	//	string for histogram name
+
 	for( string folder : f->getFolders() )	{	//	for each folder
 
 		std::cout << "Moving histograms to " << folder << "folder ..." << std::endl;	//	inform user
 		d = newHists->mkdir(("hists_" + folder).c_str());	//	make a folder
 		
 		for( Int_t i = 0; i <= gmc; i++ ) {	//	for each channel number
-			h = (TH1F*)newHists->FindObjectAny((folder + "C" + to_string(i)).c_str());	//	histogram to move
+
+			s = folder + to_string(i);	//	create name
+			s.erase(std::remove_if(s.begin(), s.end(), []( char const& c ) -> bool { return !std::isalnum(c); } ), s.end());	//	strip invalid name characters
+			h = (TH1F*)newHists->FindObjectAny(s.c_str());	//	histogram to move
+
 			if( h != nullptr ) {	//	if histogram exists
 
 				h->SetDirectory(d);	//	move histogram
-				newHists->Delete((folder + "C" + to_string(i) + ";1").c_str());	//	delete from original folder
+				newHists->Delete((s + ";1").c_str());	//	delete from original folder
 
 			}	//	end move of histogram
 			
@@ -104,8 +112,9 @@ if(il==55)	{
 
 
 
-void analysis::colourful_hp() {	//	output a colourful hit pattern
+void analysis::colourful_hp(TTree* bigTree) {	//	output a colourful hit pattern
 
+	std::cout << "Starting colourful hit pattern now...it's not efficient so it will take some time, I think it is with nlogn not n!" << std::endl;
 	Int_t bins[3] = {256, 0, 255};	//	histogram {bin count, X minimum, X maximum}
 	Int_t ic[7] = {kGray, kBlue, kViolet, kTeal, kRed, kPink, kGreen};	//	histogram colours
 	TCanvas* cA = new TCanvas();	//	drawing canvas for histogram
@@ -127,6 +136,7 @@ void analysis::colourful_hp() {	//	output a colourful hit pattern
 
 
 	cA->SetLogy();	//	logarithmic scale
+	std::cout << "Colourful hit pattern is done!" << std::endl;
 
 }	//	end colourful hit pattern
 
