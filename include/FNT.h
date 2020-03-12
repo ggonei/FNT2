@@ -32,10 +32,10 @@ class FNT {	//	main analysis object
 		FNT(const char* f = "out.root", const char* h = "histograms.root");	//	default constructor
 		~FNT() {}	//	destructor
 		
+		Channel* addChannel( char d, int n, int p = -1 );	//	add new channel
+		Channel* getChannel(int i) { if( channels.count(i) ) return channels.at(i); else return NULL; }	//	check for existence of and return channel( channel )
 		Helper* helper;	//	required for countdown, sanitiser
 		
-		Channel* getChannel(int i) { if( channels.count(i) ) return channels.at(i); else return NULL; }	//	check for existence of and return channel( channel )
-
 		TChain* chainer();	//	combine tree files
 		TChain* getTree() { return tree; }	//	get xpos channel
 		TTree* newTree() { return addedTree; }	//	get new tree
@@ -58,7 +58,6 @@ class FNT {	//	main analysis object
 		short getMaxChannels() { return totalChannels; }	//	get highest useful channel
 		short getNumChans() { return channels.size(); }	//	get xpos channel
 
-		void addChannel( char c, int n, int p = -1 );	//	add new channel
 		void addFriend(TTree* t) { tree->AddFriend(t); };	//	add friend to our tree
 		void setChanB(int n) { beamChannel = n; }	//	set beam clock( channel )
 		void setChanR(int n) { thetChannel = n; }	//	set theta position( channel )
@@ -67,7 +66,6 @@ class FNT {	//	main analysis object
 		void setTimeLastB(ULong64_t timeb) { timeLastB = timeb; }	//	set time of last beam pulse
 		void setXPosition(UInt_t nrj) { xPosition = nrj; }	//	set time of last x position
 
-		bool addCalibrations();	//	add calibrations
 		bool addChannels();	//	add channels
 		bool addGates();	//	add gates
 		bool getHists();	//	get histograms

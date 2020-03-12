@@ -1,73 +1,72 @@
-Channel	Type	Pixel
-s=n_sum,l=LaBr3,n=neutron,g=germanium,x=xpos,r=theta,t=rf
-2	s	-1
-3	l	-1
-11	n	1
-12	n	2
-13	n	3
-14	n	4
-15	n	5
-16	n	6
-17	n	7
-18	n	8
-21	n	9
-22	n	10
-23	n	11
-24	n	12
-25	n	13
-26	n	14
-27	n	15
-28	n	16
-31	n	17
-32	n	18
-33	n	19
-34	n	20
-35	n	21
-36	n	22
-37	n	23
-38	n	24
-41	n	25
-42	n	26
-43	n	27
-44	n	28
-45	n	29
-46	n	30
-47	n	31
-48	n	32
-51	n	33
-52	n	34
-53	n	35
-54	n	36
-55	n	37
-56	n	38
-57	n	39
-58	n	40
-61	n	41
-62	n	42
-63	n	43
-64	n	44
-65	n	45
-66	n	46
-67	n	47
-68	n	48
-71	n	49
-72	n	50
-73	n	51
-74	n	52
-75	n	53
-76	n	54
-77	n	55
-78	n	56
-81	n	57
-82	n	58
-83	n	59
-84	n	60
-85	n	61
-86	n	62
-87	n	63
-88	n	64
-90	g	0
-91	g	1
-95	x	-1
-96	r	-1
-97	t	-1
+Channel(s=n_sum,l=LaBr3,n=neutron,g=germanium,x=xpos,r=theta,t=rf)	Type	Pixel	TimeOffset Type{(P)olynomial,(E)xponential,(L)ogarithmic)	x^0	x^1	x^2	... OR Ae^Bx + C OR AlogB(Cx) + D
+2		s	-1	0	P	1
+3		l	-1	0	P	1
+11	n	1		0	P	1
+12	n	2		0	P	1
+13	n	3		0	P	1
+14	n	4		0	P	1
+15	n	5		0	P	1
+16	n	6		0	P	1
+17	n	7		0	P	1
+18	n	8		0	P	1
+21	n	9		0	P	1
+22	n	10	0	P	1
+23	n	11	0	P	1
+24	n	12	0	P	1
+25	n	13	0	P	1
+26	n	14	0	P	1
+27	n	15	0	P	1
+28	n	16	0	P	1
+31	n	17	0	P	1
+32	n	18	0	P	1
+33	n	19	0	P	1
+34	n	20	0	P	1
+35	n	21	0	P	1
+36	n	22	0	P	1
+37	n	23	0	P	1
+38	n	24	0	P	1
+41	n	25	0	P	1
+42	n	26	0	P	1
+43	n	27	0	P	1
+44	n	28	0	P	1
+45	n	29	0	P	1
+46	n	30	0	P	1
+47	n	31	0	P	1
+48	n	32	0	P	1
+51	n	33	0	P	1
+52	n	34	0	P	1
+53	n	35	0	P	1
+54	n	36	0	P	1
+55	n	37	0	P	1
+56	n	38	0	P	1
+57	n	39	0	P	1
+58	n	40	0	P	1
+61	n	41	0	P	1
+62	n	42	0	P	1
+63	n	43	0	P	1
+64	n	44	0	P	1
+65	n	45	0	P	1
+66	n	46	0	P	1
+67	n	47	0	P	1
+68	n	48	0	P	1
+71	n	49	0	P	1
+72	n	50	0	P	1
+73	n	51	0	P	1
+74	n	52	0	P	1
+75	n	53	0	P	1
+76	n	54	0	P	1
+77	n	55	0	P	1
+78	n	56	0	P	1
+81	n	57	0	P	1
+82	n	58	0	P	1
+83	n	59	0	P	1
+84	n	60	0	P	1
+85	n	61	0	P	1
+86	n	62	0	P	1
+87	n	63	0	P	1
+88	n	64	0	P	1
+90	g	0		0	P	1
+91	g	1		0	P	1
+95	x	-1	0	P	1
+96	r	-1	0	P	1
+97	t	-1	0	P	1
