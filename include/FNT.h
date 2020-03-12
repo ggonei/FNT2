@@ -22,6 +22,7 @@
 
 //	FNT2 libraries
 #include "../include/Channel.h"
+#include "../include/Helper.h"
 
 namespace fnt {	//	create unique working area
 
@@ -30,6 +31,8 @@ class FNT {	//	main analysis object
 	public:
 		FNT(const char* f = "out.root", const char* h = "histograms.root");	//	default constructor
 		~FNT() {}	//	destructor
+		
+		Helper* helper;	//	required for countdown, sanitiser
 		
 		Channel* getChannel(int i) { if( channels.count(i) ) return channels.at(i); else return NULL; }	//	check for existence of and return channel( channel )
 
@@ -56,7 +59,7 @@ class FNT {	//	main analysis object
 		short getNumChans() { return channels.size(); }	//	get xpos channel
 
 		void addChannel( char c, int n, int p = -1 );	//	add new channel
-		void addFriend( TTree* t ) { tree->AddFriend(t); };	//	add friend to our tree
+		void addFriend(TTree* t) { tree->AddFriend(t); };	//	add friend to our tree
 		void setChanB(int n) { beamChannel = n; }	//	set beam clock( channel )
 		void setChanR(int n) { thetChannel = n; }	//	set theta position( channel )
 		void setChanX(int n) { xposChannel = n; }	//	set table x position( channel )

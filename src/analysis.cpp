@@ -11,20 +11,11 @@ namespace fnt {	//	create unique working area
 void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 	Channel* c;	//	allocate channel pointer
-	ULong64_t increment = 0.01 * n, countdown = increment;	//	get percentage increment
-	Int_t percent = 0, npixel;	//	get reset value for progress counter
+	Int_t npixel;	//	get reset value for progress counter
 
 	for( ULong64_t i = 0; i < n; i++ ) {	//	loop over all entries
 
-		if( --countdown == 0 ) {	//	check progress
-
-			percent++;	//	increment total bars
-			std::cout << "\r" + std::string(percent, 'X') + std::string(100-percent, '-') + "\t" + std::to_string(percent) + "%";	//	create bar
-			countdown = increment;	//	reset countdown
-			std::cout.flush();	//	print bar
-
-		}	//	end progress check
-		
+		f->helper->countdown();	//	print progress
 		bigTree->GetEntry(i);	//	grab energy info
 		il = (Int_t) label;	//	convert label to integer
 		c = f->getChannel(il);	//	set channel
@@ -91,11 +82,10 @@ if(il==55)	{
 		
 		for( Int_t i = 0; i <= gmc; i++ ) {	//	for each channel number
 
-			s = folder + to_string(i);	//	create name
-			s.erase(std::remove_if(s.begin(), s.end(), []( char const& c ) -> bool { return !std::isalnum(c); } ), s.end());	//	strip invalid name characters
+			s = f->helper->sanitiser(folder + to_string(i));	//	create name
 			h = (TH1F*)newHists->FindObjectAny(s.c_str());	//	histogram to move
 
-			if( h != nullptr ) {	//	if histogram exists
+			if( h ) {	//	if histogram exists
 
 				h->SetDirectory(d);	//	move histogram
 				newHists->Delete((s + ";1").c_str());	//	delete from original folder
@@ -142,7 +132,6 @@ void analysis::colourful_hp(TTree* bigTree) {	//	output a colourful hit pattern
 
 
 }	//	end namespace fnt
-
 
 
 void analysis(){};	//	allow root compilation

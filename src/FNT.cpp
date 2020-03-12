@@ -43,20 +43,12 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 		tree->SetBranchAddress("nrj", &nrj);	//	set address to store energy
 		tree->SetBranchAddress("time", &timeb);	//	set address to store time
 		n = tree->GetEntries();	//	initialise number of entries
-		ULong64_t increment = 0.01 * n, countdown = increment;	//	set increment length, counter
-		Int_t chanb = getChanB(), chanr = getChanR(), chanx = getChanX(), percent = 0;	//	get channel positions once
+		Int_t chanb = getChanB(), chanr = getChanR(), chanx = getChanX();	//	get channel positions once
+		helper = new Helper(n);	//	required for countdown
 
 		for( ULong64_t i = 0; i < n; i++ ) {	//	loop over all entries
 
-			if( --countdown == 0) {	//	check progress
-
-				percent++;	//	increment total bars
-				std::cout << "\r" + std::string(percent, 'X') + std::string(100-percent, '-') + "\t" + std::to_string(percent) + "%";	//	create bar
-				countdown = increment;	//	reset countdown
-				std::cout.flush();	//	print bar
-
-			}	//	end progress check
-
+			helper->countdown();	//	print progress
 			tree->GetEntry(i);	//	grab label
 			il = (Int_t) label;	//	convert label to integer
 			if( timeb < timerunstart ) {	//	look for clock reset
@@ -93,6 +85,7 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 		addedTree = tree->GetFriend("newTree");	//	load new tree
 		tree->SetBranchAddress("time", &timeb);	//	set address to store time
 		n = tree->GetEntries();	//	initialise number of entries
+		helper = new Helper(n);	//	required for countdown
 		
 	}	//	end tree load
 
@@ -277,8 +270,7 @@ bool FNT::getHists() {	//	get histograms
 
 bool FNT::histo( Int_t t, std::string n, Int_t xbins, Double_t xmin, Double_t xmax, Int_t ybins, Double_t ymin, Double_t ymax ) {	//	add histogram
 
-	std::string s = n;	//	copy string for use for name
-	s.erase(std::remove_if(s.begin(), s.end(), []( char const& c ) -> bool { return !std::isalnum(c); } ), s.end());	//	strip invalid name characters
+	std::string s = helper->sanitiser(n);	//	copy string for use for name
 	if( xbins < 1 )	xbins = std::abs(xmin + xmax)/2;	//	set bin count to one per channel
 
 	if( t < 1 )	h1s.insert({s, new TH1F( s.c_str(), n.c_str(), xbins, xmin, xmax )});	//	add 1-d histogram to vector
