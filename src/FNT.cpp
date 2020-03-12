@@ -7,9 +7,9 @@
 
 namespace fnt {	//	create unique working area
 
-const std::string FNT::filePrefix = "/mnt/d/fnt/macros/git/FNT2/inputs/";
+const std::string FNT::filePrefix = "/mnt/d/fnt/macros/git/FNT2/inputs/";	//	file path
 const std::string FNT::fileChannel = filePrefix + "channels.txt";	//	path to channel mapping
-const std::string FNT::fileFiles = filePrefix + "files.txt";	//	path to calibration file
+const std::string FNT::fileFiles = filePrefix + "files.txt";	//	path to DataTree root file list
 const std::string FNT::fileGate = filePrefix + "gates.txt";	//	path to channel mapping
 const std::string FNT::fileHisto = filePrefix + "histos.txt";	//	path to channel mapping
 

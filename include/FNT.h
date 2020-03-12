@@ -51,7 +51,7 @@ class FNT {	//	main analysis object
 		const char* getHFilename() { return fileRootH; }	//	get histograms file name
 		std::string getFileChannels() { return fileChannel; }	//	get channel map path
 		std::string getFileGates() { return fileGate; }	//	get channel map path
-		std::string getFileFiles() { return fileFiles; }	//	get calibration file path
+		std::string getFileFiles() { return fileFiles; }	//	get path to DataTree root file list
 		std::string getFileHistos() { return fileHisto; }	//	get histogram file path
 		std::vector<std::string> getFolders() { return folders; }	//	get folder names
 		short getMaxChannels() { return totalChannels; }	//	get highest useful channel
@@ -77,7 +77,7 @@ class FNT {	//	main analysis object
 		const char* fileRootH;	//	path to histograms root file
 		static const std::string filePrefix;	//	path to files
 		static const std::string fileChannel;	//	path to channel mapping
-		static const std::string fileFiles;	//	path to calibration file
+		static const std::string fileFiles;	//	path to DataTree root file list
 		static const std::string fileGate;	//	path to channel mapping
 		static const std::string fileHisto;	//	path to histograms
 		static const int beamPulseTime = 400000;	//	time between beam pulses in picoseconds
