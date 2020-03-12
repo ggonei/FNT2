@@ -8,7 +8,6 @@
 namespace fnt {	//	create unique working area
 
 const std::string FNT::filePrefix = "/mnt/d/fnt/macros/git/FNT2/inputs/";
-const std::string FNT::fileCalibration = filePrefix + "calibration.txt";	//	path to calibration file
 const std::string FNT::fileChannel = filePrefix + "channels.txt";	//	path to channel mapping
 const std::string FNT::fileFiles = filePrefix + "files.txt";	//	path to calibration file
 const std::string FNT::fileGate = filePrefix + "gates.txt";	//	path to channel mapping
@@ -23,7 +22,6 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 	fileRootH = h;	//	set histogram filename
 
 	addChannels();	//	add all channels list
-	addCalibrations();	//	apply calibrations
 	addGates();	//	add gates
 
 	if( gSystem->AccessPathName(filename) ) {	//	if file does not exist
@@ -99,47 +97,16 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 
 
 
-bool FNT::addCalibrations() {	//	add calibrations
-	
-	char c;	//	calibration type
-	double d;	//	calibration terms
-	std::ifstream s( getFileCalibration() );	//	open file
-	int t;	//	time offset
-	short i;	//	channel number
-	std::string x = "";	//	hold lines
-	std::stringstream h;	//	hold remainer of line in stream
-	std::vector<double>	v;	//	hold calibration terms
-	
-	s.ignore(std::numeric_limits<std::streamsize>::max(), '\n');	//	skip opening comment line
-	
-	while( getline(s, x) ) {	//	while we have data...
-	
-		v.clear();	//	reset calibration term vector
-		h.str(x);	//	fill holding stream
-		h.clear();	//	reset stream pointer
-		h >> i >> t >> c;	//	fill channel, time, and type
-		
-		while( h >> d )	v.push_back(d);	//	rebuild double string
-		
-		if( getChannel(i) ) getChannel(i)->addCalibration(t, c, v);	//	add calibration to channel with ( offset, type, terms )
-		else std::cout << "Calibration for channel " << i << " exists, but channel " << i << " doesn't exist!" << std::endl;	//	no channel to add calibration to
-	
-	}	//	end data read in
-	
-	return true;	//	success
-	
-}	//	end addCalibrations
+Channel* FNT::addChannel( char d, int n, int p /* = -1 */ ) {	//	add channel( type, channel, pixel )
 
-
-
-void FNT::addChannel( char c, int n, int p /* = -1 */ ) {	//	add channel( type, channel, pixel )
-
-	Channel* x = new Channel(c, n, p);	//	create new channel
+	Channel* x = new Channel(d, n, p);	//	create new channel
 	channels.insert({n, x});	//	add a new channel to the map
 
-	if( c == 'n' ) neutrons.push_back(x);	//	add channel to neutrons
-	else if( c == 'g' ) germaniums.push_back(x);	//	add channel to germaniums
-	else if( c == 'l' ) labr.push_back(x);	//	add channel to LaBr3s
+	if( d == 'n' ) neutrons.push_back(x);	//	add channel to neutrons
+	else if( d == 'g' ) germaniums.push_back(x);	//	add channel to germaniums
+	else if( d == 'l' ) labr.push_back(x);	//	add channel to LaBr3s
+	
+	return x;
 
 }
 
@@ -147,24 +114,33 @@ void FNT::addChannel( char c, int n, int p /* = -1 */ ) {	//	add channel( type, 
 
 bool FNT::addChannels() {	//	add channels
 	
-	char c;	//	detector type
+	char d, c;	//	detector type, calibration type
+	double n;	//	calibration term
 	std::ifstream s( getFileChannels() );	//	open file
+	int t;	//	time offset
 	short i, p;	//	channel, pixel number
 	std::string x = "";	//	hold lines
-	
-	s.ignore(std::numeric_limits<std::streamsize>::max(), '\n');	//	skip opening comment line
-	
-	while( getline(s, x) ) {	//	while we have data...
-	
-		s >> i >> c >> p;	//	hold channel, type, and pixel
-		addChannel(c, i, p);	//	add channel
+	std::stringstream h;	//	hold remainer of line in stream
+	std::vector<double>	v;	//	hold calibration terms
 
-		if( c == 't' ) setChanB( i );	//	set brfp channel
-		else if( c == 'r' ) setChanR( i );	//	set thet channel
-		else if( c == 'x' ) setChanX( i );	//	set xpos channel
-	
+	s.ignore(std::numeric_limits<std::streamsize>::max(), '\n');	//	skip opening comment line
+
+	while( getline(s, x) ) {	//	while we have data...
+
+		v.clear();	//	reset calibration term vector
+		h.str(x);	//	fill holding stream
+		h.clear();	//	reset stream pointer
+		h >> i >> d >> p >> t >> c;	//	hold channel number, detector type, pixel number, time offset, and calibration type
+		while( h >> n )	v.push_back(n);	//	rebuild double string
+		Channel* newc = addChannel(d, i, p);	//	add channel
+		newc->addCalibration(t, c, v);	//	add calibration to channel with ( offset, type, terms )
+
+		if( d == 't' ) setChanB( i );	//	set brfp channel
+		else if( d == 'r' ) setChanR( i );	//	set thet channel
+		else if( d == 'x' ) setChanX( i );	//	set xpos channel
+
 	}	//	end data read in
-	
+
 	return true;	//	success
 
 }	//	end addChannels

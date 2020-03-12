@@ -49,7 +49,6 @@ class FNT {	//	main analysis object
 		Int_t getChanX() { return xposChannel; }	//	get xpos channel
 		const char* getFilename() { return filename; }	//	get root file name
 		const char* getHFilename() { return fileRootH; }	//	get histograms file name
-		std::string getFileCalibration() { return fileCalibration; }	//	get calibration file path
 		std::string getFileChannels() { return fileChannel; }	//	get channel map path
 		std::string getFileGates() { return fileGate; }	//	get channel map path
 		std::string getFileFiles() { return fileFiles; }	//	get calibration file path
@@ -77,7 +76,6 @@ class FNT {	//	main analysis object
 		const char* filename;	//	path to tree root file
 		const char* fileRootH;	//	path to histograms root file
 		static const std::string filePrefix;	//	path to files
-		static const std::string fileCalibration;	//	path to calibration file
 		static const std::string fileChannel;	//	path to channel mapping
 		static const std::string fileFiles;	//	path to calibration file
 		static const std::string fileGate;	//	path to channel mapping
