@@ -7,7 +7,9 @@ It compiles on the command line (although that will be slowest):
 
 If you see a floating point exception, make sure to check the files in line 10-15 of FNT.cpp actually exist, and the same for the root files in the file called by fileFiles.
 
-If you std::out_of_range error, check the histograms all exist in histos.txt and remember that 1-D histograms end in 0 (= 'all channels') after the name
+If you std::out_of_range error, check the histograms all exist in histos.txt and remember that non-channel histograms end in 0 (= 'all channels') after the name listed
+
+
 
 Example output:
 

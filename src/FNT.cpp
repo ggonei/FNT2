@@ -208,33 +208,43 @@ bool FNT::getHists() {	//	get histograms
 //	histo( 0, "test", 10, 0, 10 );
 	
 	while( getline(s, x) ) {	//	while we have data...
-	
+
 		s >> t >> n >> xbins >> xmin >> xmax;	//	fill values
-		
+
 		if( t < 1 )	{	//	if 1-D histograms
-			
+
 			if( t < 0 ) {	//	if multiple histograms
-				
+
 				folders.push_back(n);	//	use prefix to add to folder names
-				
+
 			}	//	end multiple histogram check
-			
+
 			t = abs(t);
-			
+
 			for( Int_t i = 0; i <= (t < getMaxChannels() ? t : getMaxChannels()); i++ )	{	//	loop over all histograms
 
 				histo( 0, n + std::to_string(i), xbins, xmin, xmax );	//	create 1-d histogram
 
 			}
-			
+
 		}
-		else if( t == 1 ) {	// if a 2-D histogram
-			
+		else if( t > 0 ) {	// if a multi histogram
+
 			s >> ybins >> ymin >> ymax;	//	fill remaining values
-			histo( t, n, xbins, xmin, xmax, ybins, ymin, ymax );	//	create 2-d histogram
-			
+
+			if( t > 1 ) {	//	if multiple histograms
+
+				folders.push_back(n);	//	use prefix to add to folder names
+
+			}	//	end multiple histogram check
+
+			for( Int_t i = 0; i <= (t < getMaxChannels() ? (t == 1 ? 0 : t) : getMaxChannels()); i++ )	{	//	loop over all histograms
+
+				histo( 1, n + std::to_string(i), xbins, xmin, xmax, ybins, ymin, ymax );	//	create 2-d histogram
+
+			}
 		}
-	
+
 	}	//	end data read in
 	
 	newHists->Write("", TObject::kOverwrite);	//	write histograms to file
@@ -251,14 +261,14 @@ bool FNT::histo( Int_t t, std::string n, Int_t xbins, Double_t xmin, Double_t xm
 
 	if( t < 1 )	h1s.insert({s, new TH1F( s.c_str(), n.c_str(), xbins, xmin, xmax )});	//	add 1-d histogram to vector
 	
-	else {	// if a 2-D histogram
-		
+	else if( t > 0 ) {	// if a 2-D histogram
+
 		if( ybins < 1 )	ybins = std::abs(ymin + ymax)/2;	//	set bin count to one per channel
-		
+
 		h2s.insert({s, new TH2F( s.c_str(), n.c_str(), xbins, xmin, xmax, ybins, ymin, ymax )});	//	add 2-d histogram to vector
-		
+
 	}
-	
+
 	return true;	//	success
 
 }	//	end adding histogram

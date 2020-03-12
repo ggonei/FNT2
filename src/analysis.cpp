@@ -32,39 +32,39 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 			if( npixel > -1 )	{	//	neutron gate alternatively il>10&&il<90&&(il%10>0&&il%10<9)
 
-				f->getH2("timeVneutrons")->Fill((timeb-timeLastB)%bpt, il);	//	neutron channels V time
-				f->getH2("pixels")->Fill(floor(npixel/8), npixel%8);	//	fill hit pattern
-if(il==55)	{
+				f->getH2("timeVneutrons0")->Fill((timeb-timeLastB)%bpt, il);	//	neutron channels V time
+				f->getH2("pixels0")->Fill(floor(npixel/8), npixel%8);	//	fill hit pattern
 				f->getH1("HitPatternNeutrons0")->Fill(il);	//	neutrons hit pattern
 				f->getH1("neutronfluxatx0")->Fill(xPos);	//	intensity of neutrons at x
 				f->getH1("neutronfluxatr0")->Fill(rPos);	//	intensity of neutrons at r
-				f->getH2("neutronfluxatrx")->Fill(xPos,rPos);	//	intensity of neutrons over positions
-}
+				f->getH2("neutronfluxatrx0")->Fill(xPos,rPos);	//	intensity of neutrons over positions
 
 			}	//	end neutron match
 
-			f->getH2("timeVchan")->Fill((timeb-timeLastB)%bpt, il);	//	channel V time
-			f->getH2("nrjVchan")->Fill(nrj, il);	//	nrj V time
-			f->getH2("nrj2Vchan")->Fill(nrj2, il);	//	nrj2 V time
+			f->getH2("timeVchan0")->Fill((timeb-timeLastB)%bpt, il);	//	channel V time
+			f->getH2("nrjVchan0")->Fill(nrj, il);	//	nrj V time
+			f->getH2("nrj2Vchan0")->Fill(nrj2, il);	//	nrj2 V time
 
 			if(	il == chanX )	{	//	do stuff with the x position
 				
-				f->getH2("xVtime")->Fill(timeb, nrj);	//	x position V time
+				f->getH2("xVtime0")->Fill(timeb, nrj);	//	x position V time
 				
 			}	//	end doing stuff with x
 
 			if(	il == chanR )	{	//	do stuff with the theta position
 				
-				f->getH2("rVtime")->Fill(timeb, nrj);	//	theta position V time
+				f->getH2("rVtime0")->Fill(timeb, nrj);	//	theta position V time
 				
 			}	//	end doing stuff with theta
 
-			f->getH1("timeadjC" + to_string(il))->Fill((timeb-timeLastB-(c->getTOffset()))%bpt);	//	add to adjusted time histogram
+			f->getH1("timeadjC" + to_string(il))->Fill((timeb-timeLastB-c->getTOffset())%bpt);	//	add to adjusted time histogram
 			f->getH1("nrjadjC" + to_string(il))->Fill( c->adjE(nrj) );	//	add to adjusted nrj histogram
 			f->getH1("nrj2adjC" + to_string(il))->Fill( c->adjE(nrj2) );	//	add to adjusted nrj2 histogram
-			f->getH2("timeadjVchan")->Fill((timeb-timeLastB-(c->getTOffset()))%bpt, il);	//	channel V time
-			f->getH2("nrjadjVchan")->Fill(c->adjE(nrj), il);	//	nrj V time
-			f->getH2("nrj2adjVchan")->Fill(c->adjE(nrj2), il);	//	nrj2 V time
+			f->getH2("timeadjVchan0")->Fill((timeb-timeLastB-c->getTOffset())%bpt, il);	//	channel V channel
+			f->getH2("nrjadjVchan0")->Fill(c->adjE(nrj), il);	//	energy V channel
+			f->getH2("nrj2adjVchan0")->Fill(c->adjE(nrj2), il);	//	nrj2 V channel
+			f->getH2("nrjVtime" + to_string(il))->Fill((timeb-timeLastB-c->getTOffset())%bpt, nrj);	//	energy V time
+			f->getH2("nrj2Vtime" + to_string(il))->Fill((timeb-timeLastB-c->getTOffset())%bpt, nrj2);	//	nrj2 V time
 
 		}	//	end valid channel check
 
