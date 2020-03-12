@@ -7,6 +7,7 @@
 
 namespace fnt {	//	create unique working area
 
+
 void Helper::countdown() {	//	print progress
 
 	if( --countdownN == 0) {	//	check progress
@@ -20,12 +21,15 @@ void Helper::countdown() {	//	print progress
 
 }	//	end countdown
 
+
+
 string Helper::sanitiser( string s ) {	//	sanitise histogram names
 
 	s.erase(std::remove_if(s.begin(), s.end(), []( char const& c ) -> bool { return !std::isalnum(c); } ), s.end());	//	strip invalid name characters
 	return s;	//	return edited string
 
 }	//	end sanitiser
+
 
 }	//	end namespace fnt
 

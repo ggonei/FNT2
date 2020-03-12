@@ -121,7 +121,7 @@ bool FNT::addChannels() {	//	add channels
 	short i, p;	//	channel, pixel number
 	std::string x = "";	//	hold lines
 	std::stringstream h;	//	hold remainer of line in stream
-	std::vector<double>	v;	//	hold calibration terms
+	std::vector<double> v;	//	hold calibration terms
 
 	s.ignore(std::numeric_limits<std::streamsize>::max(), '\n');	//	skip opening comment line
 
@@ -161,7 +161,7 @@ bool FNT::addGates() {	//	add gates
 	
 		s >> i >> c >> low >> high;	//	fill channel, type, low, and high
 		if( getChannel(i) ) getChannel(i)->addGate(c, low, high);	//	add gate to channel with ( type, low, high )
-		else std::cout << "Gate for channel " << i << " exists, but channel " << i << " doesn't exist!" << std::endl;	//	no channel to add calibration to
+		else std::cout << "Gate for channel " << i << " exists, but channel " << i << " doesn't exist!" << std::endl;	//	no channel to add gate to
 	
 	}	//	end data read in
 	
