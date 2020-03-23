@@ -15,7 +15,7 @@ const std::string FNT::fileHisto = filePrefix + "histos.txt";	//	path to channel
 
 FNT::FNT(const char* f, const char* h)	{	//	default constructor
 
-	ULong64_t timeb, timerunstart = -1, toffset = 0, tprevious = 0;	//	initialise time branch variable and offsets
+	ULong64_t timeb, timerunstart = -1, tprevious = 0, tOffset = 0;	//	initialise time branch variable and offsets
 
 	std::cout << "Tree output is in " << f << " and histograms will be saved in " << h << std::endl;	//	tell user some basic info
 	filename = f;	//	set tree filename
@@ -29,9 +29,10 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 		std::cout << "No tree exists!  Creating..." << std::endl;	//	inform user we are making a new tree
 		file = new TFile(filename, "RECREATE");	//	save output to new file
 		addedTree = new TTree("newTree", "newTree");	//	editable tree
-		bp = addedTree->Branch("timeLastB", &(timeLastB), "timeLastB/l");	//	create new branch for last beam pulse
+		bp = addedTree->Branch("timeLastB", &(timeLastB), "timeLastB/l");	//	create new branch for last beam
 		bx = addedTree->Branch("xPosition", &(xPosition), "xPosition/i");	//	create new branch for x position
 		br = addedTree->Branch("rPosition", &(rPosition), "rPosition/i");	//	create new branch for theta position
+		bt = addedTree->Branch("timeOffset", &(timeOffset), "timeOffset/l");	//	create new branch for time offset
 		tree = chainer();	//	create tree
 		tree->AddFriend(addedTree);	//	add expanded branches to existing data
 		Int_t il;	//	integer conversion of label
@@ -51,16 +52,15 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 			il = (Int_t) label;	//	convert label to integer
 			if( timeb < timerunstart ) {	//	look for clock reset
 				
-				toffset = tprevious;	//	hold offset time
+				std::cout << "Clock has been reset at time " << timeb << " (old time " << timerunstart << ") on entry number " << i << ", changing offset from " << tOffset << " to " << tprevious << std::endl;	//	inform user
+				tOffset += tprevious;	//	get time offset for use in setting beam pulse time
+				setTimeOffset(tOffset);	//	set time offset
 				timerunstart = timeb;	//	reset t0
-				std::cout << "Clock has been reset at time " << timerunstart << " on entry number " << i << ", changing offset from " << toffset << " to " << tprevious << std::endl;	//	inform user
 				
 			}	//	end clock reset check
 
-			if( il == chanb ) setTimeLastB(toffset + timeb);	//	update beam time if there is one
-
+			if( il == chanb ) setTimeLastB(timeb + tOffset);	//	update beam time if there is one
 			else if( il == chanr ) setRPosition(nrj);	//	update theta if there is one
-
 			else if( il == chanx ) setXPosition(nrj);	//	update xpos if there is one
 
 			addedTree->Fill();	//	fill new branches
@@ -97,7 +97,7 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 
 
 
-Channel* FNT::addChannel( char d, int n, int p /* = -1 */ ) {	//	add channel( type, channel, pixel )
+Channel* FNT::addChannel( char d, Int_t n, Int_t p /* = -1 */ ) {	//	add channel( type, channel, pixel )
 
 	Channel* x = new Channel(d, n, p);	//	create new channel
 	channels.insert({n, x});	//	add a new channel to the map
@@ -115,13 +115,12 @@ Channel* FNT::addChannel( char d, int n, int p /* = -1 */ ) {	//	add channel( ty
 bool FNT::addChannels() {	//	add channels
 	
 	char d, c;	//	detector type, calibration type
-	double n;	//	calibration term
+	Double_t n;	//	calibration term
 	std::ifstream s( getFileChannels() );	//	open file
-	int t;	//	time offset
-	short i, p;	//	channel, pixel number
+	Int_t i, p, t;	//	channel, pixel number, time offset
 	std::string x = "";	//	hold lines
 	std::stringstream h;	//	hold remainer of line in stream
-	std::vector<double> v;	//	hold calibration terms
+	std::vector<Double_t> v;	//	hold calibration terms
 
 	s.ignore(std::numeric_limits<std::streamsize>::max(), '\n');	//	skip opening comment line
 
@@ -152,7 +151,7 @@ bool FNT::addGates() {	//	add gates
 	char c;	//	gate type
 	std::ifstream s( getFileGates() );	//	open file
 	ULong64_t low, high;	//	low, high values
-	short i;	//	channel number
+	Int_t i;	//	channel number
 	std::string x = "";	//	hold lines
 	
 	s.ignore(std::numeric_limits<std::streamsize>::max(), '\n');	//	skip opening comment line
@@ -198,8 +197,7 @@ bool FNT::getHists() {	//	get histograms
 
 	newHists = new TFile(fileRootH, "RECREATE");	//	create histogram file
 	std::ifstream s( getFileHistos() );	//	open file
-	Int_t t;	//	histogram type
-	Int_t xbins = -1, ybins = -1;	//	histogram bin counts
+	Int_t t, xbins = -1, ybins = -1;	//	type, histogram bin counts
 	Double_t xmin = 0, xmax = 0, ymin = 0, ymax = 0;	//	histogram axis minmax
 	std::string n = "", x = "";	//	hold name, lines
 	

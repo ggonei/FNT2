@@ -5,16 +5,17 @@
 //
 #ifndef GATES_H
 #define GATES_H
+#include <iostream>
 
 namespace fnt {	//	create unique working area
 
 class Gate {	//	object for channels
 
 	public:
-		Gate(char c, ULong64_t low, ULong64_t high) {	//	default constructor
+		Gate(char c, ULong64_t min, ULong64_t max) {	//	default constructor
 			type = c;	//	set gate type
-			low = low;	//	set gate minimum
-			high = high;	//	set gate maximum
+			low = min;	//	set gate minimum
+			high = max;	//	set gate maximum
 		}	//	end default constructor
 		~Gate() {}	//	destructor
 		

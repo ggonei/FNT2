@@ -7,10 +7,14 @@
 #define ANALYSIS_H
 #include "../include/FNT.h"
 
+//	C++ libraries
+#include <deque>
+
 //	ROOT libraries
 #include "TCanvas.h"
 #include "THStack.h"
 #include "TLegend.h"
+#include "TSpectrum.h"
 
 namespace fnt {	//	create unique working area
 
@@ -28,6 +32,7 @@ class analysis {	//	main analysis object
 			bigTree->SetBranchAddress("timeLastB", &timeLastB);	//	set address to store last beam time recorded
 			bigTree->SetBranchAddress("xPosition", &xPos);	//	set address to store last known x
 			bigTree->SetBranchAddress("rPosition", &rPos);	//	set address to store last known theta
+			bigTree->SetBranchAddress("timeOffset", &timeOffset);	//	set address to store time
 			n = f->getEntries();	//	set limit for for loop
 			bpt = f->getBPT();	//	get beam pulse time
 			chanR = f->getChanR();	//	get theta channel
@@ -50,7 +55,7 @@ class analysis {	//	main analysis object
 		Int_t bpt, chanR, chanX, il, gmc;	//	integer conversion of beam time, theta channel, x channel, label, maximum channel
 		UChar_t label;	//	initialise variable to store labels
 		UInt_t nrj, nrj2, xPos, rPos;	//	initialise variables to store nrj, nrj2, x position, theta position
-		ULong64_t timeb, timeLastB, n;	//	initialise time branch variable, progress counter and number of entries
+		ULong64_t timeb, timeLastB, timeOffset, n;	//	initialise time branch variable, progress counter, time offset, and number of entries
 		
 
 };	//	end class analysis

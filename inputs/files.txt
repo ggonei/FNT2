@@ -1,3 +1,7 @@
 This is simply a list of paths to files that you want to use to make your root file; make sure to keep the last line clear!
-/mnt/d/fnt/rootfiles/iron_brass_again_3hrs_0013.root
-/mnt/d/fnt/rootfiles/iron_brass_again_3hrs_0014.root
+/mnt/d/fnt/rootfiles/iron_bis_0001.root
+/mnt/d/fnt/rootfiles/iron_bis_0002.root
+/mnt/d/fnt/rootfiles/iron_bis_0003.root
+/mnt/d/fnt/rootfiles/iron_bis_0004.root
+/mnt/d/fnt/rootfiles/iron_bis_0005.root
+/mnt/d/fnt/rootfiles/iron_bis_0006.root

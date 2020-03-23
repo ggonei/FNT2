@@ -11,8 +11,12 @@ namespace fnt {	//	create unique working area
 void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 	Channel* c;	//	allocate channel pointer
-	Int_t npixel;	//	get reset value for progress counter
+	Int_t npixel, timeSinceB, k;	//	get pixel, reset value for progress counter, counter
+	std::string s;	//	string for names
 	f->helper->resetCountdown();	//	reset countdown in case it has been used prior
+	ULong64_t timeLastBp = 0, tarr[gmc];	//	previous beam pulse time
+	vector<pair<Long64_t,Int_t>> coincidences;	//	hold coincident timestamps
+	deque<pair<Long64_t,Int_t>> coincCheck;
 
 	for( ULong64_t i = 0; i < n; i++ ) {	//	loop over all entries
 
@@ -24,22 +28,80 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 		if( c ) {	//	skip unknown channels
 
-			f->getH1("timeC" + to_string(il))->Fill((timeb-timeLastB)%bpt);	//	add to time histogram
-			f->getH1("nrjC" + to_string(il))->Fill(nrj);	//	add to nrj histogram
-			f->getH1("nrj2C" + to_string(il))->Fill(nrj2);	//	add to nrj2 histogram
+			timeb = timeb + timeOffset;	//	adjust timeb to include offset
+			s = to_string(il);	//	get channel number stored as string
+			f->getH1("timeC" + s)->Fill((timeb-timeLastB)%bpt);	//	add to time histogram
+			timeSinceB = (timeb-timeLastB-c->getTOffset())%bpt;
 
 			npixel = c->getPixelNumber();	//	store pixel
 
-			if( npixel > -1 )	{	//	neutron gate alternatively il>10&&il<90&&(il%10>0&&il%10<9)
+			if( npixel > 0 )	{	//	neutron gate alternatively il>10&&il<90&&(il%10>0&&il%10<9)
 
 				f->getH2("timeVneutrons0")->Fill((timeb-timeLastB)%bpt, il);	//	neutron channels V time
-				f->getH2("pixels0")->Fill(floor(npixel/8), npixel%8);	//	fill hit pattern
-				f->getH1("HitPatternNeutrons0")->Fill(il);	//	neutrons hit pattern
-				f->getH1("neutronfluxatx0")->Fill(xPos);	//	intensity of neutrons at x
-				f->getH1("neutronfluxatr0")->Fill(rPos);	//	intensity of neutrons at r
-				f->getH2("neutronfluxatrx0")->Fill(xPos,rPos);	//	intensity of neutrons over positions
+
+				if( c->passes(timeSinceB, 't') )	{	//	if passing channel gate
+
+					f->getH2("pixels0")->Fill(floor(npixel/8), npixel%8);	//	fill hit pattern
+					f->getH1("HitPatternNeutrons0")->Fill(il);	//	neutrons hit pattern
+					f->getH1("neutronfluxatx0")->Fill(xPos);	//	intensity of neutrons at x
+					f->getH1("neutronfluxatr0")->Fill(rPos);	//	intensity of neutrons at r
+					f->getH2("neutronfluxatrx0")->Fill(xPos,rPos);	//	intensity of neutrons over positions
+					f->getH2("timeadjneutronsVchan0")->Fill(timeSinceB, il);	//	time adjusted V channel
+					f->getH1("nrjC" + s)->Fill(nrj);	//	add to nrj histogram
+					f->getH1("nrj2C" + s)->Fill(nrj2);	//	add to nrj2 histogram
+
+					if( timeLastB == timeLastBp )	{	//	if this entry belongs to current beam pulse
+
+						if( timeLastB > 0 && npixel < 61 )	coincidences.push_back(make_pair((Long64_t) timeSinceB, npixel));	//	add time and pixel to vector
+
+					}	//	end check if beam pulse is the same
+					else	{	//	a new beam pulse
+
+						sort(coincidences.begin(),coincidences.end());	//	sort vector
+
+						for( UInt_t j = 0; j < coincidences.size(); j++ )	{	//	for each entry in this beam pulse
+
+							tarr[coincidences[j].second] = coincidences[j].first;	//	store the time for this pixel in an array							
+							k = 1;	//	
+							coincCheck.push_back(coincidences[j]);
+
+							while( coincCheck[0].first < coincidences[j].first - 100000 )	coincCheck.pop_front();
+
+							for( pair<Long64_t,Int_t> p : coincCheck )	{
+
+								f->getH2("coincidences0")->Fill(p.second,coincidences[j].second);
+								if( p.first > coincidences[j].first - 10000 && p.first < coincidences[j].first + 10000 )	f->getH1("pixelsfired10C" + to_string(coincidences[j].second))->Fill( p.second );
+								else if( p.first > coincidences[j].first - 20000 && p.first < coincidences[j].first + 20000 )	f->getH1("pixelsfired20C" + to_string(coincidences[j].second))->Fill( p.second );
+								else if( p.first > coincidences[j].first - 50000 && p.first < coincidences[j].first + 50000 )	f->getH1("pixelsfired50C" + to_string(coincidences[j].second))->Fill( p.second );
+								else if( p.first > coincidences[j].first - 100000 && p.first < coincidences[j].first + 100000 )	f->getH1("pixelsfired100C" + to_string(coincidences[j].second))->Fill( p.second );
+
+							}
+
+							for( ULong64_t tpiece : tarr )	{	//	for each time
+
+								f->getH2("multiplicityt0")->Fill(coincidences[j].first - tpiece, coincidences[j].second);	//	fill time map
+
+							}	//	end for loop over time array
+
+						}	//	end for loop over coincidences
+						
+						coincidences.clear();	//	reset coincidences vector
+						coincCheck.clear();
+
+					}	//	end check of new beam pulse
+
+					timeLastBp = timeLastB;	//	store this beam pulse time for a valid neutron for comparisons
+
+				}	//	end gate check
 
 			}	//	end neutron match
+			else
+			{	//	do not apply extra conditions
+
+				f->getH1("nrjC" + s)->Fill(nrj);	//	add to nrj histogram
+				f->getH1("nrj2C" + s)->Fill(nrj2);	//	add to nrj2 histogram
+
+			}	//	end no neutron match
 
 			f->getH2("timeVchan0")->Fill((timeb-timeLastB)%bpt, il);	//	channel V time
 			f->getH2("nrjVchan0")->Fill(nrj, il);	//	nrj V time
@@ -57,14 +119,14 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 				
 			}	//	end doing stuff with theta
 
-			f->getH1("timeadjC" + to_string(il))->Fill((timeb-timeLastB-c->getTOffset())%bpt);	//	add to adjusted time histogram
-			f->getH1("nrjadjC" + to_string(il))->Fill( c->adjE(nrj) );	//	add to adjusted nrj histogram
-			f->getH1("nrj2adjC" + to_string(il))->Fill( c->adjE(nrj2) );	//	add to adjusted nrj2 histogram
-			f->getH2("timeadjVchan0")->Fill((timeb-timeLastB-c->getTOffset())%bpt, il);	//	channel V channel
+			f->getH1("timeadjC" + s)->Fill(timeSinceB);	//	add to adjusted time histogram
+			f->getH1("nrjadjC" + s)->Fill( c->adjE(nrj) );	//	add to adjusted nrj histogram
+			f->getH1("nrj2adjC" + s)->Fill( c->adjE(nrj2) );	//	add to adjusted nrj2 histogram
+			f->getH2("timeadjVchan0")->Fill(timeSinceB, il);	//	channel V channel
 			f->getH2("nrjadjVchan0")->Fill(c->adjE(nrj), il);	//	energy V channel
 			f->getH2("nrj2adjVchan0")->Fill(c->adjE(nrj2), il);	//	nrj2 V channel
-			f->getH2("nrjVtime" + to_string(il))->Fill((timeb-timeLastB-c->getTOffset())%bpt, nrj);	//	energy V time
-			f->getH2("nrj2Vtime" + to_string(il))->Fill((timeb-timeLastB-c->getTOffset())%bpt, nrj2);	//	nrj2 V time
+			f->getH2("nrjVtime" + s)->Fill(timeSinceB, nrj);	//	energy V time
+			f->getH2("nrj2Vtime" + s)->Fill(timeSinceB, nrj2);	//	nrj2 V time
 
 		}	//	end valid channel check
 
@@ -74,11 +136,14 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 	TDirectory* d;	//	hold value for directories
 	TH1F* h;	//	hold value for histogram to move
-	std::string s;	//	string for histogram name
+	const Int_t tnbins = f->getH1("timeC0")->GetNbinsX();	//	number of bins in time spectra
+	Double_t dest[tnbins], source[tnbins], *xpeaks;	//	set histogram arrays
+	TSpectrum* peakfinder = new TSpectrum();	//	peak fitting spectrum
+	ULong64_t peakcount = 0, binMultiplier;	//	number of peaks
 
 	for( string folder : f->getFolders() )	{	//	for each folder
 
-		std::cout << "Moving histograms to " << folder << "folder ..." << std::endl;	//	inform user
+		std::cout << "Moving histograms to hists_" << folder << " folder..." << std::endl;	//	inform user
 		d = newHists->mkdir(("hists_" + folder).c_str());	//	make a folder
 		
 		for( Int_t i = 0; i <= gmc; i++ ) {	//	for each channel number
@@ -87,6 +152,27 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 			h = (TH1F*)newHists->FindObjectAny(s.c_str());	//	histogram to move
 
 			if( h ) {	//	if histogram exists
+
+				if( folder == "timeC" )	{	//	if time spectrum
+
+						for( Int_t j = 0; j < tnbins; j++ )	source[j] = h->GetBinContent(j + 1);	//	set source array from histogram
+						peakfinder->SearchHighRes(source, dest, tnbins, 10, 10, kFALSE, 2, kTRUE, 10);	//	find peaks
+						xpeaks = peakfinder->GetPositionX();	//	get peak positions
+
+						if( peakfinder->GetNPeaks() > 0 )	{	//	if there are peaks
+
+							binMultiplier = (abs(h->GetXaxis()->GetXmin()) + abs(h->GetXaxis()->GetXmax())) / tnbins;
+							std::cout << "Neutron time offset for channel " << i << ":\t" << xpeaks[0] * binMultiplier;	//	print neutron offset
+							if( sizeof(xpeaks)/sizeof(Double_t*) > 1)	std::cout << ", gamma time offset" << xpeaks[1] * binMultiplier;	//	print gamma offset
+							std::cout << std::endl;	//	end line
+							xpeaks = {};	//	empty xpeaks
+							delete xpeaks;	//	reset xpeaks
+							delete peakfinder;	//	release peakfinder memory
+							peakfinder = new TSpectrum();	//	add blank spectrum
+
+						}	//	end peaks check
+
+				}	//	end time spectrum specialisations
 
 				h->SetDirectory(d);	//	move histogram
 				newHists->Delete((s + ";1").c_str());	//	delete from original folder

@@ -64,6 +64,7 @@ class FNT {	//	main analysis object
 		void setRPosition(UInt_t nrj) { rPosition = nrj; }	//	set time of last theta position
 		void setTimeLastB(ULong64_t timeb) { timeLastB = timeb; }	//	set time of last beam pulse
 		void setXPosition(UInt_t nrj) { xPosition = nrj; }	//	set time of last x position
+		void setTimeOffset(ULong64_t tprevious) { timeOffset = tprevious; }	//	set time offset
 
 		bool addChannels();	//	add channels
 		bool addGates();	//	add gates
@@ -87,8 +88,8 @@ class FNT {	//	main analysis object
 		TFile* newHists;	//	histograms file
 		TTree* addedTree;	//	new tree to add branches to
 		UInt_t rPosition = 0, xPosition = 0;	//	variables to store theta and x
-		ULong64_t timeLastB = 0, n = 0;	//	value for most recent beam pulse, number of entries
-		TBranch *bp, *br, *bx;	//	new branches for last beam pulse, theta position, x position
+		ULong64_t timeLastB = 0, timeOffset = 0, n = 0;	//	value for most recent beam pulse, time offset, number of entries
+		TBranch *bp, *br, *bt, *bx;	//	new branches for last beam pulse, theta position, time offset, x position
 		Int_t beamChannel = -1, thetChannel = -1, xposChannel = -1;	//	essential channels
 		std::unordered_map<int, Channel*> channels;	//	all channels
 		std::unordered_map<std::string, TH1F*> h1s;	//	1-D histograms

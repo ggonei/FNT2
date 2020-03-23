@@ -8,13 +8,13 @@
 namespace fnt {	//	create unique working area
 
 
-void Channel::addCalibration(int t, char c, vector<double> v) {	//	add calibration( offset, type, terms )
+void Channel::addCalibration(Int_t t, char c, vector<Double_t> v) {	//	add calibration( offset, type, terms )
 
 	timeOffset = t;	//	set time offset
 	calType = c;	//	set calibration type
 	terms = v;	//	set calibration terms
 
-}	//	end addCalibration(short c, char v, vector<double> t)
+}	//	end addCalibration(short c, char v, vector<Double_t> t)
 
 
 
@@ -29,13 +29,13 @@ void Channel::addGate(char c, ULong64_t low, ULong64_t high) {	//	add gate( type
 
 
 
-double Channel::adjE(double e) {	//	adjust energy with a calibration( energy )
+Double_t Channel::adjE(Double_t e) {	//	adjust energy with a calibration( energy )
 
-	double x = e;	//	value to return defaulted if none passed to referenced energy
+	Double_t x = e;	//	value to return defaulted if none passed to referenced energy
 
 	if( calType == 'P' ) {	//	polynomial Ax^N + Bx^(N-1) ... + C
 
-		double hold = 0;	//	hold all values to do the calculation
+		Double_t hold = 0;	//	hold all values to do the calculation
 
 		for( UInt_t i = 0; i < terms.size(); i++ ) {	//	loop over vector of terms
 			hold = terms[i] * ( pow(e, i) );	//	A*x^N
@@ -56,21 +56,21 @@ double Channel::adjE(double e) {	//	adjust energy with a calibration( energy )
 
 	return x;	//	return corrected energy
 
-}	//	end adjE( double e )
+}	//	end adjE( Double_t e )
 
 
 
-bool Channel::passes(double e, char t/* = 'e'*/) {	//	check if energy is inside a gate( energy, type = energy)
+bool Channel::passes(Double_t e, char t/* = 'e'*/) {	//	check if energy is inside a gate( energy, type = energy)
 
 	vector<Gate*>* v = &(t == 'e' ? gates_e : gates_t);	//	use time or energy gate collection
 	
 	if( v->size() == 0 )	return true;	//	if there are no gates then it must pass
 	
-	for( Gate* g : *v )	if( g->passes(e) )	return true;	//	check if energy contained in each gate
+	for( Gate* g : *v )	if( !g->passes(e) )	return false;	//	check if energy contained in each gate
 	
-	return false;	//	failed for loop so must not pass
+	return true;	//	passed for loop so must be true
 
-}	//	end passes( double e )
+}	//	end passes( Double_t e, char t )
 
 
 }	//	end namespace fnt
