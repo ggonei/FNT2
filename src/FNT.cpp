@@ -52,7 +52,7 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 			il = (Int_t) label;	//	convert label to integer
 			if( timeb < timerunstart ) {	//	look for clock reset
 				
-				std::cout << "Clock has been reset at time " << timeb << " (old time " << timerunstart << ") on entry number " << i << ", changing offset from " << tOffset << " to " << tprevious << std::endl;	//	inform user
+				std::cout << std::endl << "Clock has been reset at time " << timeb << " (old time " << timerunstart << ") on entry number " << i << ", changing offset from " << tOffset << " to " << tprevious << std::endl;	//	inform user and write out a new line to step out of counter
 				tOffset += tprevious;	//	get time offset for use in setting beam pulse time
 				setTimeOffset(tOffset);	//	set time offset
 				timerunstart = timeb;	//	reset t0
@@ -87,10 +87,19 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 		
 	}	//	end tree load
 
-	tree->GetEntry(0);	//	get first entry
-	std::cout << "There are " << n << " entries, with a minimum timestamp of " << timeb << " (" << timeb/(ULong64_t)pow(10,floor(log10(timeb))) << "e" << floor(log10(timeb))+1 << ") and a maximum timestamp of ";	//	output minimum timestamp
-	tree->GetEntry(n-1);	//	get last entry
-	std::cout << timeb << " (" << timeb/(ULong64_t)pow(10,floor(log10(timeb))) << "e" << floor(log10(timeb))+1 << ")" << std::endl;	//	output maximum timestamp
+	Int_t k = 1;	//	start check from the second entry as first entry is often strange
+	tree->GetEntry(k);	//	reset entry position
+
+	while( timeb < (ULong64_t) 1 )	{	//	make sure we have a valid entry for time
+
+		tree->GetEntry(k);	//	get first entry
+		k++;	//	increase counter
+
+	}	//	end time check
+
+	std::cout << "There are " << n << " entries, with a minimum timestamp of " << timeb << " (" << timeb/(ULong64_t)pow(10,floor(log10(timeb))) << "e" << floor(log10(timeb)) << ") and a maximum timestamp of ";	//	output minimum timestamp
+	tree->GetEntry(n-1);	//	get penultimate entry as last entry can be strange
+	std::cout << timeb << " (" << 1 + timeb/(ULong64_t)pow(10,floor(log10(timeb))) << "e" << floor(log10(timeb)) << ")" << std::endl;	//	output maximum timestamp
 	getHists();	//	create histograms
 
 }	//	end default constructor
@@ -109,7 +118,6 @@ Channel* FNT::addChannel( char d, Int_t n, Int_t p /* = -1 */ ) {	//	add channel
 	return x;
 
 }
-
 
 
 bool FNT::addChannels() {	//	add channels
@@ -132,6 +140,7 @@ bool FNT::addChannels() {	//	add channels
 		h >> i >> d >> p >> t >> c;	//	hold channel number, detector type, pixel number, time offset, and calibration type
 		while( h >> n )	v.push_back(n);	//	rebuild double string
 		Channel* newc = addChannel(d, i, p);	//	add channel
+		std::cout << "Added channel " << i << std::endl;	//	inform user
 		newc->addCalibration(t, c, v);	//	add calibration to channel with ( offset, type, terms )
 
 		if( d == 't' ) setChanB( i );	//	set brfp channel
@@ -153,19 +162,24 @@ bool FNT::addGates() {	//	add gates
 	ULong64_t low, high;	//	low, high values
 	Int_t i;	//	channel number
 	std::string x = "";	//	hold lines
-	
-	s.ignore(std::numeric_limits<std::streamsize>::max(), '\n');	//	skip opening comment line
-	
+
+//	s.ignore(std::numeric_limits<std::streamsize>::max(), '\n');	//	skip opening comment line
+
 	while( getline(s, x) ) {	//	while we have data...
-	
+
 		s >> i >> c >> low >> high;	//	fill channel, type, low, and high
-		if( getChannel(i) ) getChannel(i)->addGate(c, low, high);	//	add gate to channel with ( type, low, high )
-		else std::cout << "Gate for channel " << i << " exists, but channel " << i << " doesn't exist!" << std::endl;	//	no channel to add gate to
-	
+
+		if( getChannel(i) ) {	//	check for channel
+
+			getChannel(i)->addGate(c, low, high);	//	add gate to channel with ( type, low, high )
+			std::cout << (c == 't' ? "Time" : "Energy") << " gate applied to channel " << i << " with minimum " << low << " and high " << high << std::endl;	//	inform user
+
+		} else std::cout << "Gate for channel " << i << " exists, but channel " << i << " doesn't exist!" << std::endl;	//	no channel to add gate to
+
 	}	//	end data read in
-	
+
 	return true;	//	success
-	
+
 }	//	end addGates
 
 

@@ -14,7 +14,6 @@
 #include "TCanvas.h"
 #include "THStack.h"
 #include "TLegend.h"
-#include "TSpectrum.h"
 
 namespace fnt {	//	create unique working area
 
@@ -39,6 +38,9 @@ class analysis {	//	main analysis object
 			chanX = f->getChanX();	//	get xpos channel
 			gmc = f->getMaxChannels();	//	get maximum channel
 			do_analysis(f);	//	do analysis
+			std::cout << std::endl;	//	output a clean line after the countdown
+			histogram_operations(f);	//	do histogram operations
+			newHists->Write("", TObject::kOverwrite);	//	write histograms to file
 			newHists->Close();	//	close working file
 			TFile::Open(f->getHFilename());	//	reopen histograms file
 			std::cout << "Analysis complete!" << std::endl;	//	inform user
@@ -46,7 +48,8 @@ class analysis {	//	main analysis object
 		~analysis() {}	//	destructor
 
 		void do_analysis(fnt::FNT* f);	//	analysis function
-		void colourful_hp(TTree* bigTree);	//	colourful hit pattern
+		void histogram_operations(fnt::FNT* f);	//	histogram manipulation
+		void histogram_pretty(TTree* bigTree);	//	colourful hit pattern
 
 
 	private:

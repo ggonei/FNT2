@@ -5,7 +5,6 @@
 //
 #ifndef GATES_H
 #define GATES_H
-#include <iostream>
 
 namespace fnt {	//	create unique working area
 

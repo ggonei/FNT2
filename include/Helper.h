@@ -10,21 +10,31 @@
 #include <algorithm>
 #include <iostream>
 
+//ROOT libraries
+#include "TFitResult.h"
+#include "TH1.h"
+#include "TSpectrum.h"
+
 namespace fnt {	//	create unique working area
 
 class Helper {	//	object for channels
 
 	public:
-		Helper(ULong64_t n = 0, double advamount = 0.01) { entries = n; increment = advamount * n, countdownN = increment; }	//	default constructor
+		Helper(ULong64_t n = 0, double advamount = 0.01) {	//	default constructor
+			entries = n;	//	number of entries
+			increment = advamount * n;	//	increment level
+			countdownN = 1;	//	set countdown to 0 to print initial marker
+		}	//	default constructor
 		~Helper() {}	//	destructor
 		
-		void resetCountdown() { percent = 0; countdownN = increment; }	//	reset countdown
+		void resetCountdown() { percent = -1; countdownN = 1; }	//	reset countdown
 		void countdown();	//	print progress
-		string sanitiser(string s);	//	sanitise histogram names
+		void peakf( TH1F* h, std::string s );	//	find peaks
+		std::string sanitiser(std::string s);	//	sanitise histogram names
 
 
 	private:
-		Int_t percent = 0;	//	set countdown percentage
+		Int_t percent = -1;	//	initialise countdown percentage marker
 		ULong64_t entries, increment, countdownN;	//	number of entries for this helper, increment length, counter
 
 	};
