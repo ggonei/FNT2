@@ -36,7 +36,6 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 			if( npixel > 0 )	{	//	neutron gate alternatively il>10&&il<90&&(il%10>0&&il%10<9)
 
-if(npixel == 2 || npixel == 3 || npixel == 4 ) std::cout << i << ":" << npixel << ":" << timeLastB << std::endl;
 				f->getH2("timeVneutrons0")->Fill((timeb-timeLastB)%bpt, npixel);	//	neutron channels V time
 				f->getH2("timeadjVneutrons0")->Fill(timeSinceB, npixel);	//	time adjusted V channel
 				f->getH2("NeutronRate0")->Fill(timeb, npixel);	//	add hit to rate
@@ -135,7 +134,7 @@ if(npixel == 2 || npixel == 3 || npixel == 4 ) std::cout << i << ":" << npixel <
 void analysis::histogram_operations(fnt::FNT* f) {	//	start histogram alterations
 
 	TDirectory* d;	//	hold value for directories
-	TH1F* h;	//	hold value for histogram to move
+	TH1D* h;	//	hold value for histogram to move
 	std::string s;	//	string for histograms
 
 	for( string folder : f->getFolders() )	{	//	for each folder
@@ -146,7 +145,7 @@ void analysis::histogram_operations(fnt::FNT* f) {	//	start histogram alteration
 		for( Int_t i = 0; i <= gmc; i++ ) {	//	for each channel number
 
 			s = f->helper->sanitiser(folder + to_string(i));	//	create name
-			h = (TH1F*)newHists->FindObjectAny(s.c_str());	//	histogram to move
+			h = (TH1D*)newHists->FindObjectAny(s.c_str());	//	histogram to move
 
 			if( h ) {	//	if histogram exists
 
@@ -174,22 +173,20 @@ void analysis::histogram_pretty(TTree* bigTree) {	//	output a colourful hit patt
 	Int_t bins[3] = {256, 0, 255};	//	histogram {bin count, X minimum, X maximum}
 	Int_t ic[7] = {kGray, kBlue, kViolet, kTeal, kRed, kPink, kGreen};	//	histogram colours
 	TCanvas* cA = new TCanvas();	//	drawing canvas for histogram
-	TH1F* hist_arr7[7];	//	histogram array
+	TH1D* hist_arr7[7];	//	histogram array
 	TLegend* l = new TLegend(0.7,0.7,1,1);	//	initialise legend
 	bool tf[256] = { false };	//	initialise an array for all channels
 	string sh[7] = {"All Channels", "Neutrons", "Germaniums", "LaBr3", "Nothing", "RF", "Table"};	//	histogram titles
 	string sc[7] = {"", "((label%10>0&&label%10<9)&&label>10&&label<90)||label==2", "label==90||label==91", "label==3",  "label==0||label==1||label==4||label==7||label==8||label==10||label==19||label==20||label==29||label==30||label==39||label==40||label==49||label==50||label==59||label==60||label==234||label==235||label==243||label==244||label==245||label==246||label==247||label==248||label==249||label==250||label==253||label==254||label==255", "label==97", "label==95||label==96"};	//	histogram conditions GO
 
+	for (UInt_t i = 0; i < (sizeof(hist_arr7)/sizeof(TH1D*)); i++) {	//	loop over histogram array
 
-	for (UInt_t i = 0; i < (sizeof(hist_arr7)/sizeof(TH1F*)); i++) {	//	loop over histogram array
-
-		hist_arr7[i] = new TH1F(("hist_arr[" + std::to_string(i) + "]").c_str(), sh[i].c_str(), bins[0], bins[1], bins[2]);	//	create new histogram
+		hist_arr7[i] = new TH1D(("hist_arr[" + std::to_string(i) + "]").c_str(), sh[i].c_str(), bins[0], bins[1], bins[2]);	//	create new histogram
 		hist_arr7[i]->SetLineColor(ic[i]);	//	set histogram colour
 		bigTree->Draw(("label>>hist_arr[" + std::to_string(i) + "]").c_str(), sc[i].c_str());	//	grab data from tree and add to histogram
 		l->AddEntry(hist_arr7[i], sh[i].c_str());	//	add histogram entry to legend with title
 
 	}	//	end loop over histogram array
-
 
 	cA->SetLogy();	//	logarithmic scale
 	std::cout << "Colourful hit pattern is done!" << std::endl;

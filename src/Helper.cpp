@@ -16,7 +16,7 @@ void Helper::countdown() {	//	print progress
 	if( --countdownN == 0) {	//	check progress
 
 		percent++;	//	increment total bars
-		std::cout << "\r" + std::string(percent, 'X') + std::string(100-percent, '-') + "\t" + std::to_string(percent) + "%";	//	create bar
+		std::cout << "\r" + std::string(percent, 'X') + std::string(100-percent, '-') + " " + std::to_string(percent) + "%";	//	create bar
 		countdownN = increment;	//	reset countdown
 		std::cout.flush();	//	print bar
 
@@ -25,13 +25,13 @@ void Helper::countdown() {	//	print progress
 }	//	end countdown
 
 
-void Helper::peakf( TH1F* h, std::string s ) {	//	find main peaks of spectrum
+void Helper::peakf( TH1D* h, std::string s ) {	//	find main peaks of spectrum
 
 	ULong64_t binMultiplier;	//	multiplier bins
 	std::string channel = std::string(h->GetName()).substr(s.length());	//	channel name
 	TSpectrum* finder = new TSpectrum();	//	peak fitting spectrum
 	TFitResultPtr fitResult;	//	store fit result parameters
-	TH1F* hFitted = h;	//	fitted histogram initialised as current
+	TH1D* hFitted = (TH1D*) h->Clone();	//	fitted histogram initialised as current
 	const Int_t nbins = h->GetNbinsX();	//	number of bins in energy spectra
 	Int_t tWidth = 50000, xmax = h->GetXaxis()->GetXmax(), xmin = h->GetXaxis()->GetXmin();	//	store time offset, x maximum, x minimum
 	Double_t fitMean, fitSigma, source[nbins], dest[nbins], *xpeaks;	//	store fit parameters, histogram arrays
@@ -50,18 +50,22 @@ void Helper::peakf( TH1F* h, std::string s ) {	//	find main peaks of spectrum
 		fitResult = hFitted->Fit("gaus", "QNCS", "", fitMean - tWidth, fitMean + tWidth);	//	get fit information
 		fitMean = fitResult->Parameter(1);	//	mean of fit
 		fitSigma = 2*fitResult->Parameter(2);	//	sigma of fit
-		
+
 		if( fitSigma < 0.075 * (xmax - xmin) )	{	//	check fwtm is less than an amount of range
 
 			std::cout << "Neutron " << s << " for channel " << channel << ":\t" << round(fitMean) << "\tgate low:\t" << round(fitMean - fitSigma) << "\tgate high:\t" << round(fitMean + fitSigma);	//	print neutron offset, gate
+
 			if( sizeof(xpeaks)/sizeof(Double_t*) > 1)	std::cout << "\tgamma " + s + " offset:\t" << xpeaks[1] * binMultiplier;	//	print gamma offset
 
 		}	else std::cout << "Channel " << channel << " is too noisy";	//	print failure
+
 		std::cout << std::endl;	//	end line
 
 	}	//	end peaks check
 
-}	//	end peakfinder( TH1F )
+	delete hFitted;	//	delete fitted histogram
+
+}	//	end peakfinder( TH1D )
 
 
 std::string Helper::sanitiser( std::string s ) {	//	sanitise histogram names

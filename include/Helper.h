@@ -12,7 +12,7 @@
 
 //ROOT libraries
 #include "TFitResult.h"
-#include "TH1.h"
+#include "TH1D.h"
 #include "TSpectrum.h"
 
 namespace fnt {	//	create unique working area
@@ -29,7 +29,7 @@ class Helper {	//	object for channels
 		
 		void resetCountdown() { percent = -1; countdownN = 1; }	//	reset countdown
 		void countdown();	//	print progress
-		void peakf( TH1F* h, std::string s );	//	find peaks
+		void peakf( TH1D* h, std::string s );	//	find peaks
 		std::string sanitiser(std::string s);	//	sanitise histogram names
 
 

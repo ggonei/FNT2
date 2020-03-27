@@ -51,12 +51,12 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 			tree->GetEntry(i);	//	grab label
 			il = (Int_t) label;	//	convert label to integer
 			if( timeb < timerunstart ) {	//	look for clock reset
-				
+
 				std::cout << std::endl << "Clock has been reset at time " << timeb << " (old time " << timerunstart << ") on entry number " << i << ", changing offset from " << tOffset << " to " << tprevious << std::endl;	//	inform user and write out a new line to step out of counter
 				tOffset += tprevious;	//	get time offset for use in setting beam pulse time
 				setTimeOffset(tOffset);	//	set time offset
 				timerunstart = timeb;	//	reset t0
-				
+
 			}	//	end clock reset check
 
 			if( il == chanb ) setTimeLastB(timeb + tOffset);	//	update beam time if there is one
@@ -65,11 +65,10 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 
 			addedTree->Fill();	//	fill new branches
 			tprevious = timeb;	//	store current event time for next event clock comparison
-			
+
 		}	//	end loop over all entries
 
 		std::cout << std::endl;	//	output a clean line after the countdown
-
 		addedTree->Write("", TObject::kOverwrite);	//	Write new tree to file
 		tree->Write("", TObject::kOverwrite);	//	Write main tree to file
 
@@ -84,7 +83,7 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 		tree->SetBranchAddress("time", &timeb);	//	set address to store time
 		n = tree->GetEntries();	//	initialise number of entries
 		helper = new Helper(n);	//	required for countdown
-		
+
 	}	//	end tree load
 
 	Int_t k = 1;	//	start check from the second entry as first entry is often strange
@@ -217,8 +216,6 @@ bool FNT::getHists() {	//	get histograms
 	
 	s.ignore(std::numeric_limits<std::streamsize>::max(), '\n');	//	skip opening comment line
 	
-//	histo( 0, "test", 10, 0, 10 );
-	
 	while( getline(s, x) ) {	//	while we have data...
 
 		s >> t >> n >> xbins >> xmin >> xmax;	//	fill values
@@ -271,13 +268,13 @@ bool FNT::histo( Int_t t, std::string n, Int_t xbins, Double_t xmin, Double_t xm
 	std::string s = helper->sanitiser(n);	//	copy string for use for name
 	if( xbins < 1 )	xbins = std::abs(xmin + xmax)/2;	//	set bin count to one per channel
 
-	if( t < 1 )	h1s.insert({s, new TH1F( s.c_str(), n.c_str(), xbins, xmin, xmax )});	//	add 1-d histogram to vector
-	
+	if( t < 1 )	h1s.insert({s, new TH1D( s.c_str(), n.c_str(), xbins, xmin, xmax )});	//	add 1-d histogram to vector
+
 	else if( t > 0 ) {	// if a 2-D histogram
 
 		if( ybins < 1 )	ybins = std::abs(ymin + ymax)/2;	//	set bin count to one per channel
 
-		h2s.insert({s, new TH2F( s.c_str(), n.c_str(), xbins, xmin, xmax, ybins, ymin, ymax )});	//	add 2-d histogram to vector
+		h2s.insert({s, new TH2D( s.c_str(), n.c_str(), xbins, xmin, xmax, ybins, ymin, ymax )});	//	add 2-d histogram to vector
 
 	}
 

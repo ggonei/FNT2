@@ -16,8 +16,8 @@
 //	ROOT libraries
 #include <TChain.h>
 #include <TFile.h>
-#include <TH1F.h>
-#include <TH2F.h>
+#include <TH1D.h>
+#include <TH2D.h>
 #include <TSystem.h>
 
 //	FNT2 libraries
@@ -40,8 +40,8 @@ class FNT {	//	main analysis object
 		TChain* getTree() { return tree; }	//	get xpos channel
 		TTree* newTree() { return addedTree; }	//	get new tree
 		TFile* histFile() { return newHists; }	//	get histogram root file
-		TH1F* getH1(string s) { return h1s.at(s); }	//	return histogram
-		TH2F* getH2(string s) { return h2s.at(s); }	//	return histogram
+		TH1D* getH1(string s) { return h1s.at(s); }	//	return histogram
+		TH2D* getH2(string s) { return h2s.at(s); }	//	return histogram
 
 		Int_t getBPT() { return beamPulseTime; }	//	get time between beam pulses
 		Int_t getChanB() { return beamChannel; }	//	get beam channel
@@ -92,8 +92,8 @@ class FNT {	//	main analysis object
 		TBranch *bp, *br, *bt, *bx;	//	new branches for last beam pulse, theta position, time offset, x position
 		Int_t beamChannel = -1, thetChannel = -1, xposChannel = -1;	//	essential channels
 		std::unordered_map<int, Channel*> channels;	//	all channels
-		std::unordered_map<std::string, TH1F*> h1s;	//	1-D histograms
-		std::unordered_map<std::string, TH2F*> h2s;	//	2-D histograms
+		std::unordered_map<std::string, TH1D*> h1s;	//	1-D histograms
+		std::unordered_map<std::string, TH2D*> h2s;	//	2-D histograms
 		std::vector<Channel*> neutrons, germaniums, labr;	//	channels by detector group
 		std::vector<std::string> folders;	//	folders
 
