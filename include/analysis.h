@@ -14,6 +14,7 @@
 #include "TCanvas.h"
 #include "THStack.h"
 #include "TLegend.h"
+#include "TH3.h"
 
 namespace fnt {	//	create unique working area
 

@@ -10,13 +10,16 @@ namespace fnt {	//	create unique working area
 void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 	Channel* c;	//	allocate channel pointer
+	deque<pair<Long64_t,pair<Int_t,pair<Int_t,Int_t>>>> coincCheck;	//	hold coincident pixels
+	vector<pair<Long64_t,pair<Int_t,pair<Int_t,Int_t>>>> coincidences;	//	hold events occurring in same time pulse
+	Double_t flux = 0;	//	flux
 	Int_t npixel, timeSinceB;	//	get pixel, time since beam
 	std::string s;	//	string for names
+	UInt_t xPrev = 20001;	//	previous x position
+	ULong64_t timeLastBp = 0, timein = 0, tarr[65];	//	previous beam pulse time, time in to beam pulse, coincidence array
 	f->helper->resetCountdown();	//	reset countdown in case it has been used prior
-	ULong64_t timeLastBp = 0, tarr[gmc];	//	previous beam pulse time
-	vector<pair<Long64_t,Int_t>> coincidences;	//	hold events occurring in same time pulse
-	deque<pair<Long64_t,Int_t>> coincCheck;	//	hold coincident pixels
-
+ TH3D* h3d = new TH3D("h","h",64,0,64,64,0,64,500,0,500);
+ 
 	for( ULong64_t i = 0; i < n; i++ ) {	//	loop over all entries
 
 		f->helper->countdown();	//	print progress
@@ -30,7 +33,6 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 			timeb = timeb + timeOffset;	//	adjust timeb to include offset
 			s = to_string(il);	//	get channel number stored as string
 			timeSinceB = (timeb-timeLastB-c->getTOffset())%bpt;	//	store aligned time
-			if( timeSinceB > 400000 ) std::cout << s << ":" << timeb << ", " << timeLastB;
 			f->getH1("timeC" + s)->Fill((timeb-timeLastB)%bpt);	//	add to time histogram
 			npixel = c->getPixelNumber();	//	store pixel
 
@@ -42,20 +44,38 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 				if( c->passes(timeSinceB, 't') )	{	//	if passing channel gate
 
-					f->getH2("NeutronRateGated0")->Fill(timeb, npixel);	//	add hit to rate
+					if( xPos <= 20000 || xPos >= 202000 )	{	//	if we are at the edge of the table
+
+						if( xPrev > 20000 && xPrev < 202000 )	{	//	if the last entry was on the table
+
+							flux = 0;	//	reset flux
+							timein = timeb;	//	set time into 
+
+						}
+
+						flux++;	//	add one to flux
+
+					}	//	end table edge check
+					else if( xPrev <= 20000 || xPrev >= 202000 )	{	//	else if the last entry was at the edge of the table
+
+						flux = flux / ((timeb - timein) / 1e12);	//	edit flux from raw counts to per second
+						f->getH1("NeutronFlux0")->Fill(timeb, flux);	//	plot flux
+
+					}
+
+					f->getH2("neutronfluxatrx0")->Fill(xPos,rPos,1/(1+flux));	//	intensity of neutrons over positions
+					if( flux > 0 )	f->getH2("NeutronRateGated0")->Fill(timeb, npixel);	//	add hit to rate
 					f->getH2("pixels0")->Fill((npixel-1)%8, floor((npixel-1)/8));	//	fill hit pattern
 					f->getH1("HitPatternNeutrons0")->Fill(il);	//	neutrons hit pattern
 					f->getH1("neutronfluxatx0")->Fill(xPos);	//	intensity of neutrons at x
 					f->getH1("neutronfluxatr0")->Fill(rPos);	//	intensity of neutrons at r
-					f->getH2("neutronfluxatrx0")->Fill(xPos,rPos);	//	intensity of neutrons over positions
 					f->getH1("nrjC" + s)->Fill(nrj);	//	add to nrj histogram
 					f->getH1("nrj2C" + s)->Fill(nrj2);	//	add to nrj2 histogram
-
-				}	//	end gate check
+					xPrev = xPos;	//	store previous x position
 
 					if( timeLastB == timeLastBp )	{	//	if this entry belongs to current beam pulse
 
-						if( timeLastB > 0 )	coincidences.push_back(make_pair((Long64_t) timeSinceB, npixel));	//	add time and pixel to vector
+						if( timeLastB > 0 )	coincidences.push_back(make_pair((Long64_t) timeSinceB, make_pair(npixel,make_pair(xPos,rPos))));	//	add time and pixel to vector
 
 					}	//	end check if beam pulse is the same
 					else	{	//	a new beam pulse
@@ -64,31 +84,56 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 						for( UInt_t j = 0; j < coincidences.size(); j++ )	{	//	for each entry in this beam pulse
 
-							tarr[coincidences[j].second] = coincidences[j].first;	//	store the time for this pixel in an array							
+							tarr[coincidences[j].second.first] = coincidences[j].first;	//	store the time for this pixel in an array							
 							coincCheck.push_back(coincidences[j]);	//	add this pixel to coincidence time check
 
-//							while( coincCheck[0].first < coincidences[j].first - 400000 )	coincCheck.pop_front();	//	delete events outside coincidence window
-
-							for( pair<Long64_t,Int_t> p : coincCheck )	{
-
-								if( !(p.second == coincidences[j].second && p.first == coincidences[j].first) )	f->getH2("coincidences0")->Fill(p.second, coincidences[j].second);	//	fill coincidence map
-								if( p.first > coincidences[j].first - 1000 && p.first < coincidences[j].first + 1000 )	f->getH1("pixelsfired10C" + to_string(coincidences[j].second))->Fill( p.second );
-								else if( p.first > coincidences[j].first - 2000 && p.first < coincidences[j].first + 2000 )	f->getH1("pixelsfired20C" + to_string(coincidences[j].second))->Fill( p.second );
-								else if( p.first > coincidences[j].first - 5000 && p.first < coincidences[j].first + 5000 )	f->getH1("pixelsfired50C" + to_string(coincidences[j].second))->Fill( p.second );
-								else if( p.first > coincidences[j].first - 10000 && p.first < coincidences[j].first + 10000 )	f->getH1("pixelsfired100C" + to_string(coincidences[j].second))->Fill( p.second );
-
-							}
-
-							for( ULong64_t tpiece : tarr )	f->getH2("multiplicityt0")->Fill(coincidences[j].first - tpiece, coincidences[j].second);	//	fill time map
+							for( ULong64_t tpiece : {(coincidences[j].second.first + 8 <65?tarr[coincidences[j].second.first + 8]:coincidences[j].first), (coincidences[j].second.first - 8 >0?tarr[coincidences[j].second.first - 8]:coincidences[j].first), ( ( 8 - ( coincidences[j].second.first - 1 ) % 8 ) > 1 ? tarr[coincidences[j].second.first + 1] : coincidences[j].first ), ( ( ( coincidences[j].second.first - 1 ) % 8 ) > 0 ? tarr[coincidences[j].second.first - 1] : coincidences[j].first )} )	f->getH2("multiplicityt0")->Fill(coincidences[j].first - tpiece, coincidences[j].second.first);	//	fill time map
 
 						}	//	end for loop over coincidences
 						
+						UInt_t j=0, k = 0, neighbour = 0;
+
+						for( pair<Long64_t,pair<Int_t,pair<Int_t,Int_t>>> p : coincCheck )	{
+
+							k = j;
+							neighbour = 0;
+							while( k < coincCheck.size() && p.first > coincCheck[k].first - 40 ){
+		//						if( !(p.second == coincCheck[k].second && p.first == coincCheck[k].first) )	f->getH2("coincidences0")->Fill(p.second, coincCheck[k].second);	//	fill coincidence map
+/*								if( p.first > coincCheck[k].first - 1000 && p.first < coincCheck[k].first + 1000 ){f->getH2("coincidences10000")->Fill(p.second, coincCheck[k].second);	f->getH1("pixelsfired10C" + to_string(coincCheck[k].second))->Fill( p.second );}
+								else if( p.first > coincCheck[k].first - 2000 && p.first < coincCheck[k].first + 2000 ){f->getH2("coincidences20000")->Fill(p.second, coincCheck[k].second);	f->getH1("pixelsfired20C" + to_string(coincCheck[k].second))->Fill( p.second );}
+								else if( p.first > coincCheck[k].first - 5000 && p.first < coincCheck[k].first + 5000 ){f->getH2("coincidences50000")->Fill(p.second, coincCheck[k].second);	f->getH1("pixelsfired50C" + to_string(coincCheck[k].second))->Fill( p.second );}
+								else if( p.first > coincCheck[k].first - 10000 && p.first < coincCheck[k].first + 10000 ){f->getH2("coincidences100000")->Fill(p.second, coincCheck[k].second);	f->getH1("pixelsfired100C" + to_string(coincCheck[k].second))->Fill( p.second );}
+								else{std::cout << p.first << " doesn't pass with " << coincCheck[k].first << std::endl;}*/
+							if( !(p.second.first == coincCheck[k].second.first && p.first == coincCheck[k].first) )								h3d->Fill(p.second.first,coincCheck[k].second.first, coincCheck[k].first - p.first);
+								if( f->helper->neighbour(p.second.first, coincCheck[k].second.first) )	neighbour++;
+								k++;
+							}
+
+//if(neighbour > 1)								std::cout << coincCheck.size() << "A" << k << "N:" << neighbour << std::endl;
+							if( neighbour == 0 )	f->getH2("pixelsCleaned0")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
+							if( neighbour > 0 )	f->getH2("pixelsCleaned1")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
+							if( neighbour > 1 )	{
+								f->getH2("pixelsCleaned2")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
+								f->getH2("neutronMfluxatrx0")->Fill(p.second.second.first,p.second.second.second);	//	intensity of neutrons over positions
+							}
+							if( neighbour > 2 )	f->getH2("pixelsCleaned3")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
+							if( neighbour > 3 )	f->getH2("pixelsCleaned4")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
+							if( neighbour > 4 )	f->getH2("pixelsCleaned5")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
+							if( neighbour > 5 )	f->getH2("pixelsCleaned6")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
+							if( neighbour > 6 )	f->getH2("pixelsCleaned7")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
+							if( neighbour > 7 )	f->getH2("pixelsCleaned8")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
+							j++;
+
+						}
+
 						coincidences.clear();	//	reset coincidences vector
 						coincCheck.clear();	//	reset pixels in coincidence
 
 					}	//	end check of new beam pulse
 
 					timeLastBp = timeLastB;	//	store this beam pulse time for a valid neutron for comparisons
+
+				}	//	end gate check
 
 			}	//	end neutron match
 			else
@@ -123,6 +168,7 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 			f->getH2("nrj2adjVchan0")->Fill(c->adjE(nrj2), il);	//	nrj2 V channel
 			f->getH2("nrjVtime" + s)->Fill(timeSinceB, nrj);	//	energy V time
 			f->getH2("nrj2Vtime" + s)->Fill(timeSinceB, nrj2);	//	nrj2 V time
+
 
 		}	//	end valid channel check
 

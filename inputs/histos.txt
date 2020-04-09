@@ -3,32 +3,39 @@
 0	HitPattern					256	0	256
 0	HitPatternNeutrons	256	0	256
 1	NeutronRate					3000	7e10	3.00007e15	64	0	64
-1	NeutronRateGated		3000	7e10	3.00007e15	64	0	64
+0 NeutronFlux					20000	7e10	2.1207e16
+1	NeutronRateGated		20000	7e10	2.1207e16	64	0	64
 0	neutronfluxatx	5000	0	250000
 0	neutronfluxatr	1500	0	15000
--255	timeC			8000	0	400000
+-255	timeC			500	0	2000000
 -255	nrjC			20000	0	1000000
 -255	nrj2C			2000	0	10000
--255	time_adjC	8000	0	400000
+-255	time_adjC	8000	0	2000000
 -255	nrj_adjC		1000	0	1000000
 -255	nrj2_adjC	1000	0	1000000
-255 nrjVtime	 	400		0	400000	400	0	40000
-255 nrj2Vtime	 	400		0	400000	400	0	40000
-1	timeVchan			4000	0	400000	256	0		256
-1	timeVneutrons	4000	0	400000	64	0	64
+255 nrjVtime	 	400		0	2000000	400	0	40000
+255 nrj2Vtime	 	400		0	2000000	400	0	40000
+1	timeVchan			4000	0	2000000	256	0		256
+1	timeVneutrons	20000	0	2000000	64	0	64
 1	nrjVchan			2000	0	10000	256	0	256
 1	nrj2Vchan			2000	0	10000	256	0	256
-1	timeadjVchan	4000	0	400000	256	0	256
-1	timeadjVneutrons	4000	0	400000	64	0	64
+1	timeadjVchan	4000	0	2000000	256	0	256
+1	timeadjVneutrons	4000	0	2000000	64	0	64
 1	nrjadjVchan		1000	0	1000000	256	0	256
 1	nrj2adjVchan	1000	0	1000000	256	0	256
 1	xVtime				3000	7e10	3.00007e15	2500	0	250000
 1	rVtime				3000	7e10	3.00007e15	2500	0	250000
-1	neutronfluxatrx	5000	0	250000	1500	0	15000
+1	neutronfluxatrx	5000	0	250000	5000	0	250000
+1	neutronMfluxatrx	5000	0	250000	5000	0	250000
 1	pixels	8	0	8	8	0	8
+10	pixelsCleaned	8	0	8	8	0	8
 1	multiplicityt	80000	-800000	800000	64	0		64
 -255	pixelsfired10C	64 0 64
 -255	pixelsfired20C	64 0 64
 -255	pixelsfired50C	64 0 64
 -255	pixelsfired100C	64 0 64
 1	coincidences	64	0	64	64	0	64
+1	coincidences1000_	64	0	64	64	0	64
+1	coincidences2000_	64	0	64	64	0	64
+1	coincidences5000_	64	0	64	64	0	64
+1	coincidences10000_	64	0	64	64	0	64

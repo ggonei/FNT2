@@ -34,15 +34,16 @@ void Helper::peakf( TH1D* h, std::string s ) {	//	find main peaks of spectrum
 	TH1D* hFitted = (TH1D*) h->Clone();	//	fitted histogram initialised as current
 	const Int_t nbins = h->GetNbinsX();	//	number of bins in energy spectra
 	Int_t tWidth = 50000, xmax = h->GetXaxis()->GetXmax(), xmin = h->GetXaxis()->GetXmin();	//	store time offset, x maximum, x minimum
-	Double_t fitMean, fitSigma, source[nbins], dest[nbins], *xpeaks;	//	store fit parameters, histogram arrays
+	Double_t fitMean, fitSigma, source[nbins], dest[nbins], dest2[nbins], *xpeaks;	//	store fit parameters, histogram arrays
 
 	for( Int_t i = 0; i < nbins; i++ )	source[i] = h->GetBinContent(i + 1);	//	set source array from histogram
 
-	finder->SearchHighRes(source, dest, nbins, 10, 10, kFALSE, 2, kTRUE, 10);	//	find peaks
+	finder->SearchHighRes(source, dest, nbins, 6, 10, kFALSE, 3, kTRUE, 50);	//	smooth peaks without removing background
+	finder->SearchHighRes(dest, dest2, nbins, 6, 10, kTRUE, 3, kFALSE, 50);	//	remove background without smoothing
 
 	if( finder->GetNPeaks() > 0 )	{	//	if there are peaks
 
-		for (Int_t i = 0; i < nbins; i++ )	hFitted->SetBinContent(i + 1, dest[i]);	//	fill histogram to fit
+		for (Int_t i = 0; i < nbins; i++ )	hFitted->SetBinContent(i + 1, dest2[i]);	//	fill histogram to fit
 
 		binMultiplier = (abs(xmin) + abs(xmax)) / h->GetNbinsX();	//	convert bin number to time
 		xpeaks = finder->GetPositionX();	//	get peaks

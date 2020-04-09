@@ -31,7 +31,7 @@ class Channel {	//	object for channels
 		void addGate(char c, ULong64_t low, ULong64_t high);	//	add gate with ( type, low, high )
 		Double_t adjE(double e);	//	adjust energy with a calibration( energy )
 		Int_t getChannelNumber() { return channelNumber; }	//	get channel number
-		Int_t getPixelNumber() { return pixelNumber; }	//	get pixel number		
+		Int_t getPixelNumber() { return pixelNumber; }	//	get pixel number
 		Int_t getTOffset() { return timeOffset; };	//	get time offset
 		bool passes(double e, char t = 'e');	//	check if energy is inside gate( energy, type = energy )
 
