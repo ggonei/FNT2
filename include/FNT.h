@@ -1,5 +1,5 @@
 //
-//	George O'Neill @ University of York, 2020/02/18
+//	George O'Neill @ University of York, 2020
 //
 //	This file creates an analysis object containing important constants which are used throughout analysis
 //
@@ -18,6 +18,7 @@
 #include <TFile.h>
 #include <TH1D.h>
 #include <TH2D.h>
+#include <TH3D.h>
 #include <TSystem.h>
 
 //	FNT2 libraries
@@ -42,11 +43,13 @@ class FNT {	//	main analysis object
 		TFile* histFile() { return newHists; }	//	get histogram root file
 		TH1D* getH1(string s) { return h1s.at(s); }	//	return histogram
 		TH2D* getH2(string s) { return h2s.at(s); }	//	return histogram
+		TH3D* getH3(string s) { return h3s.at(s); }	//	return histogram
 
 		Int_t getBPT() { return beamPulseTime; }	//	get time between beam pulses
 		Int_t getChanB() { return beamChannel; }	//	get beam channel
 		Int_t getChanR() { return thetChannel; }	//	get tpos channel
 		Int_t getChanX() { return xposChannel; }	//	get xpos channel
+		Int_t getCoincWind() { return coincWind; }	//	get time between beam pulses
 		const char* getFilename() { return filename; }	//	get root file name
 		const char* getHFilename() { return fileRootH; }	//	get histograms file name
 		std::string getFileChannels() { return fileChannel; }	//	get channel map path
@@ -69,20 +72,21 @@ class FNT {	//	main analysis object
 		bool addChannels();	//	add channels
 		bool addGates();	//	add gates
 		bool getHists();	//	get histograms
-		bool histo(Int_t t, std::string n, Int_t xbins = 1000, Double_t xmin = 0, Double_t xmax = 10000, Int_t ybins = 1000, Double_t ymin = 0, Double_t ymax = 10000 );	//	add histogram
+		bool histo(Float_t t, std::string n, Int_t xbins = 1000, Double_t xmin = 0, Double_t xmax = 10000, Int_t ybins = 1000, Double_t ymin = 0, Double_t ymax = 10000, Int_t zbins = 1000, Double_t zmin = 0, Double_t zmax = 10000 );	//	add histogram
 		ULong64_t getEntries() { return n; }	//	total entries in tree
 
 
 	private:
-		const char* filename;	//	path to tree root file
-		const char* fileRootH;	//	path to histograms root file
+		static const int beamPulseTime = 400000;	//	time between beam pulses in picoseconds
+		static const int coincWind = 40;	//	coincidence window
+		static const int totalChannels = 98;	//	highest useful channel
 		static const std::string filePrefix;	//	path to files
 		static const std::string fileChannel;	//	path to channel mapping
 		static const std::string fileFiles;	//	path to DataTree root file list
 		static const std::string fileGate;	//	path to channel mapping
 		static const std::string fileHisto;	//	path to histograms
-		static const int beamPulseTime = 400000;	//	time between beam pulses in picoseconds
-		static const int totalChannels = 98;	//	highest useful channel
+		const char* filename;	//	path to tree root file
+		const char* fileRootH;	//	path to histograms root file
 		TChain* tree;	//	chain of files used for analysis;
 		TFile* file;	//	tree file
 		TFile* newHists;	//	histograms file
@@ -94,6 +98,7 @@ class FNT {	//	main analysis object
 		std::unordered_map<int, Channel*> channels;	//	all channels
 		std::unordered_map<std::string, TH1D*> h1s;	//	1-D histograms
 		std::unordered_map<std::string, TH2D*> h2s;	//	2-D histograms
+		std::unordered_map<std::string, TH3D*> h3s;	//	3-D histograms
 		std::vector<Channel*> neutrons, germaniums, labr;	//	channels by detector group
 		std::vector<std::string> folders;	//	folders
 

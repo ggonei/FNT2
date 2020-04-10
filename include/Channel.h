@@ -1,5 +1,5 @@
 //
-//	George O'Neill @ University of York, 2020/02/17
+//	George O'Neill @ University of York, 2020
 //
 //	This file compartmentalises all channels into one and applies a calibration
 //

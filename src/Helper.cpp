@@ -1,9 +1,9 @@
 //
-//	George O'Neill @ University of York, 2020/03/12
+//	George O'Neill @ University of York, 2020
 //
 //	This file holds helper functions used in various other parts of the code:
 //		countdown
-//		peakfinder
+//		peakf
 //		sanitiser
 //
 #include "../include/Helper.h"
@@ -58,7 +58,7 @@ void Helper::peakf( TH1D* h, std::string s ) {	//	find main peaks of spectrum
 
 			if( sizeof(xpeaks)/sizeof(Double_t*) > 1)	std::cout << "\tgamma " + s + " offset:\t" << xpeaks[1] * binMultiplier;	//	print gamma offset
 
-		}	else std::cout << "Channel " << channel << " is too noisy";	//	print failure
+		}	else std::cout << "Channel " << channel << " is too noisy, with sigma of fit = " << fitSigma;	//	print failure
 
 		std::cout << std::endl;	//	end line
 

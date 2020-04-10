@@ -1,5 +1,5 @@
 //
-//	George O'Neill @ University of York, 2020/02/12
+//	George O'Neill @ University of York, 2020
 //
 //	This file holds methods for gates, except they actually are all short enough for the header
 //

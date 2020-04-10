@@ -1,5 +1,5 @@
 //
-//	George O'Neill @ University of York, 2020/02/18
+//	George O'Neill @ University of York, 2020
 //
 //	This file creates an analysis object containing important constants which are used throughout analysis
 //
@@ -210,34 +210,44 @@ bool FNT::getHists() {	//	get histograms
 
 	newHists = new TFile(fileRootH, "RECREATE");	//	create histogram file
 	std::ifstream s( getFileHistos() );	//	open file
-	Int_t t, xbins = -1, ybins = -1;	//	type, histogram bin counts
-	Double_t xmin = 0, xmax = 0, ymin = 0, ymax = 0;	//	histogram axis minmax
+	Int_t xbins = -1, ybins = -1, zbins = -1;	//	histogram bin counts
+	Double_t t, xmin = 0, xmax = 0, ymin = 0, ymax = 0, zmin = 0, zmax = 0;	//	type, histogram axis minmax
 	std::string n = "", x = "";	//	hold name, lines
-	
+
 	s.ignore(std::numeric_limits<std::streamsize>::max(), '\n');	//	skip opening comment line
-	
+
 	while( getline(s, x) ) {	//	while we have data...
 
 		s >> t >> n >> xbins >> xmin >> xmax;	//	fill values
 
-		if( t < 1 )	{	//	if 1-D histograms
+		if( t < 1 )	{	//	if 1-d histograms
 
-			if( t < 0 ) {	//	if multiple histograms
+			if( signbit(t) )	{	//	if 1-d histograms
 
-				folders.push_back(n);	//	use prefix to add to folder names
+				if( t < 0 ) {	//	if multiple histograms
 
-			}	//	end multiple histogram check
+					folders.push_back(n);	//	use prefix to add to folder names
 
-			t = abs(t);
+				}	//	end multiple histogram check
 
-			for( Int_t i = 0; i <= (t < getMaxChannels() ? t : getMaxChannels()); i++ )	{	//	loop over all histograms
+				t = abs(t);	//	convert the number of histograms
 
-				histo( 0, n + std::to_string(i), xbins, xmin, xmax );	//	create 1-d histogram
+				for( Int_t i = 0; i <= (t < getMaxChannels() ? t : getMaxChannels()); i++ )	{	//	loop over all histograms
 
-			}
+					histo( -0.0, n + std::to_string(i), xbins, xmin, xmax );	//	create 1-d histogram
 
-		}
-		else if( t > 0 ) {	// if a multi histogram
+				}	//	end loop over histograms
+
+			}	//	end 1-d histogram check
+			else {	// else must be a 3-d histogram
+
+				s >> ybins >> ymin >> ymax >> zbins >> zmin >> zmax;	//	fill values for 3-d
+				histo( 0, n + "0", xbins, xmin, xmax, ybins, ymin, ymax, zbins, zmin, zmax );	//	create 3-d histogram
+
+			}	//	end 3-d histogram check
+
+		}	//	end 1-d histogram check
+		else if( t > 0 ) {	// if a 2-d histogram
 
 			s >> ybins >> ymin >> ymax;	//	fill remaining values
 
@@ -251,8 +261,9 @@ bool FNT::getHists() {	//	get histograms
 
 				histo( 1, n + std::to_string(i), xbins, xmin, xmax, ybins, ymin, ymax );	//	create 2-d histogram
 
-			}
-		}
+			}	//	end 2-d histogram loop
+
+		}	//	end 2-d histogram check
 
 	}	//	end data read in
 	
@@ -263,20 +274,46 @@ bool FNT::getHists() {	//	get histograms
 
 
 
-bool FNT::histo( Int_t t, std::string n, Int_t xbins, Double_t xmin, Double_t xmax, Int_t ybins, Double_t ymin, Double_t ymax ) {	//	add histogram
+bool FNT::histo( Float_t t, std::string n, Int_t xbins, Double_t xmin, Double_t xmax, Int_t ybins, Double_t ymin, Double_t ymax, Int_t zbins, Double_t zmin, Double_t zmax ) {	//	add histogram
 
 	std::string s = helper->sanitiser(n);	//	copy string for use for name
-	if( xbins < 1 )	xbins = std::abs(xmin + xmax)/2;	//	set bin count to one per channel
 
-	if( t < 1 )	h1s.insert({s, new TH1D( s.c_str(), n.c_str(), xbins, xmin, xmax )});	//	add 1-d histogram to vector
+	if( xbins < 1 )	{	//	if no xbins have been set
+		
+		xbins = std::abs(xmin + xmax)/2;	//	set bin count to one per channel
 
-	else if( t > 0 ) {	// if a 2-D histogram
+	}	//	end xbins fix
 
-		if( ybins < 1 )	ybins = std::abs(ymin + ymax)/2;	//	set bin count to one per channel
+	if( t < 1 )	{	//	if a 1-d histogram
+
+		if( zbins < 1 )	{	//	if no zbins have been set
+
+			zbins = std::abs(zmin + zmax)/2;	//	set bin count to one per channel
+
+		}	//	end zbins fix
+
+		if( signbit(t) )	{	//	check for signed zero
+
+			h1s.insert({s, new TH1D( s.c_str(), n.c_str(), xbins, xmin, xmax )});	//	fill 1-d histogram
+
+		}	//	check for 1-d histogram
+		else {	// else must be a 3-d histogram
+
+			h3s.insert({s, new TH3D( s.c_str(), n.c_str(), xbins, xmin, xmax, ybins, ymin, ymax, zbins, zmin, zmax )});	//	fill 3-d histogram
+
+		}	//	end check of signed zero
+
+	}	else if( t > 0 ) {	// if a 2-d histogram
+
+		if( ybins < 1 )	{	//	if no ybins have been set
+
+			ybins = std::abs(ymin + ymax)/2;	//	set bin count to one per channel
+
+		}	//	end ybins fix
 
 		h2s.insert({s, new TH2D( s.c_str(), n.c_str(), xbins, xmin, xmax, ybins, ymin, ymax )});	//	add 2-d histogram to vector
 
-	}
+	}	//	end histogram filling
 
 	return true;	//	success
 

@@ -1,5 +1,5 @@
 //
-//	George O'Neill @ University of York, 2020/02/18
+//	George O'Neill @ University of York, 2020
 //
 //	This file is by design a simple separator for analysis
 //
@@ -10,16 +10,14 @@ namespace fnt {	//	create unique working area
 void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 	Channel* c;	//	allocate channel pointer
-	deque<pair<Long64_t,pair<Int_t,pair<Int_t,Int_t>>>> coincCheck;	//	hold coincident pixels
-	vector<pair<Long64_t,pair<Int_t,pair<Int_t,Int_t>>>> coincidences;	//	hold events occurring in same time pulse
+	std::vector<std::pair<Long64_t,std::array<UInt_t,3>>> coincidences;	//	hold events occurring in same time pulse
 	Double_t flux = 0;	//	flux
-	Int_t npixel, timeSinceB;	//	get pixel, time since beam
+	Int_t npixel, timeSinceB;	//	get pixel, time since beam, coincidence size
 	std::string s;	//	string for names
-	UInt_t xPrev = 20001;	//	previous x position
+	UInt_t coincSize = 0, k = 0, neighbour = 0, xPrev = 20001;	//	counters, neighbours, previous x position
 	ULong64_t timeLastBp = 0, timein = 0, tarr[65];	//	previous beam pulse time, time in to beam pulse, coincidence array
 	f->helper->resetCountdown();	//	reset countdown in case it has been used prior
- TH3D* h3d = new TH3D("h","h",64,0,64,64,0,64,500,0,500);
- 
+
 	for( ULong64_t i = 0; i < n; i++ ) {	//	loop over all entries
 
 		f->helper->countdown();	//	print progress
@@ -40,7 +38,6 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 				f->getH2("timeVneutrons0")->Fill((timeb-timeLastB)%bpt, npixel);	//	neutron channels V time
 				f->getH2("timeadjVneutrons0")->Fill(timeSinceB, npixel);	//	time adjusted V channel
-				f->getH2("NeutronRate0")->Fill(timeb, npixel);	//	add hit to rate
 
 				if( c->passes(timeSinceB, 't') )	{	//	if passing channel gate
 
@@ -51,9 +48,9 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 							flux = 0;	//	reset flux
 							timein = timeb;	//	set time into 
 
-						}
+						}	//	end edge entry check
 
-						flux++;	//	add one to flux
+						flux++;	//	increment flux
 
 					}	//	end table edge check
 					else if( xPrev <= 20000 || xPrev >= 202000 )	{	//	else if the last entry was at the edge of the table
@@ -61,73 +58,57 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 						flux = flux / ((timeb - timein) / 1e12);	//	edit flux from raw counts to per second
 						f->getH1("NeutronFlux0")->Fill(timeb, flux);	//	plot flux
 
-					}
+					}	//	end table edge check
 
-					f->getH2("neutronfluxatrx0")->Fill(xPos,rPos,1/(1+flux));	//	intensity of neutrons over positions
-					if( flux > 0 )	f->getH2("NeutronRateGated0")->Fill(timeb, npixel);	//	add hit to rate
+					if( flux > 0 )	{	//	if flux is observed
+
+						f->getH2("NeutronRatePerPixel0")->Fill(timeb, npixel);	//	add hit to rate for pixel
+
+					}	//	end flux observed check
+
 					f->getH2("pixels0")->Fill((npixel-1)%8, floor((npixel-1)/8));	//	fill hit pattern
 					f->getH1("HitPatternNeutrons0")->Fill(il);	//	neutrons hit pattern
+					f->getH2("neutronfluxatrx0")->Fill(xPos, rPos, 1/(1+flux));	//	intensity of neutrons over positions
 					f->getH1("neutronfluxatx0")->Fill(xPos);	//	intensity of neutrons at x
 					f->getH1("neutronfluxatr0")->Fill(rPos);	//	intensity of neutrons at r
-					f->getH1("nrjC" + s)->Fill(nrj);	//	add to nrj histogram
-					f->getH1("nrj2C" + s)->Fill(nrj2);	//	add to nrj2 histogram
+					f->getH1("nrjadjC" + s)->Fill(c->adjE(nrj));	//	add to nrj histogram
+					f->getH1("nrj2adjC" + s)->Fill(c->adjE(nrj2));	//	add to nrj2 histogram
+					f->getH2("nrjadjVchan0")->Fill(c->adjE(nrj), il);	//	energy V channel
+					f->getH2("nrj2adjVchan0")->Fill(c->adjE(nrj2), il);	//	nrj2 V channel
 					xPrev = xPos;	//	store previous x position
 
 					if( timeLastB == timeLastBp )	{	//	if this entry belongs to current beam pulse
 
-						if( timeLastB > 0 )	coincidences.push_back(make_pair((Long64_t) timeSinceB, make_pair(npixel,make_pair(xPos,rPos))));	//	add time and pixel to vector
+						if( timeLastB > 0 )	{	//	if the entry is after the first beam pulse
+							
+							coincidences.push_back(std::make_pair((Long64_t) timeSinceB, std::array<UInt_t,3>{(UInt_t)npixel, xPos, rPos}));	//	add time, pixel and position to vector
+
+						}	//	end first beam pulse check
 
 					}	//	end check if beam pulse is the same
 					else	{	//	a new beam pulse
 
-						sort(coincidences.begin(),coincidences.end());	//	sort coincidences into time order
+						sort(coincidences.begin(), coincidences.end());	//	sort coincidences into time order
+						coincSize = coincidences.size();	//	store coincidence size
 
-						for( UInt_t j = 0; j < coincidences.size(); j++ )	{	//	for each entry in this beam pulse
+						for( UInt_t j = 0; j < coincSize; j++ )	{	//	for each coincidence
 
-							tarr[coincidences[j].second.first] = coincidences[j].first;	//	store the time for this pixel in an array							
-							coincCheck.push_back(coincidences[j]);	//	add this pixel to coincidence time check
+							k = j + 1;	//	set k to next item start loop
+							neighbour = 0;	//	reset neighbour count
 
-							for( ULong64_t tpiece : {(coincidences[j].second.first + 8 <65?tarr[coincidences[j].second.first + 8]:coincidences[j].first), (coincidences[j].second.first - 8 >0?tarr[coincidences[j].second.first - 8]:coincidences[j].first), ( ( 8 - ( coincidences[j].second.first - 1 ) % 8 ) > 1 ? tarr[coincidences[j].second.first + 1] : coincidences[j].first ), ( ( ( coincidences[j].second.first - 1 ) % 8 ) > 0 ? tarr[coincidences[j].second.first - 1] : coincidences[j].first )} )	f->getH2("multiplicityt0")->Fill(coincidences[j].first - tpiece, coincidences[j].second.first);	//	fill time map
+							while( k < coincSize && coincidences[j].first > coincidences[k].first - coincWind )	{	//	check k is within vector limits and within time constant
 
-						}	//	end for loop over coincidences
-						
-						UInt_t j=0, k = 0, neighbour = 0;
+								f->getH3("coincTimeMap0")->Fill( coincidences[j].second[0], coincidences[k].second[0], coincidences[k].first - coincidences[j].first );	//	fill coincidence pixel map for each time
+								neighbour += f->helper->neighbour(coincidences[j].second[0], coincidences[k].second[0]);	//	increment neighbour if there is one
+								k++;	//	increment k for next
 
-						for( pair<Long64_t,pair<Int_t,pair<Int_t,Int_t>>> p : coincCheck )	{
+							}	//	end coincidence time check
 
-							k = j;
-							neighbour = 0;
-							while( k < coincCheck.size() && p.first > coincCheck[k].first - 40 ){
-		//						if( !(p.second == coincCheck[k].second && p.first == coincCheck[k].first) )	f->getH2("coincidences0")->Fill(p.second, coincCheck[k].second);	//	fill coincidence map
-/*								if( p.first > coincCheck[k].first - 1000 && p.first < coincCheck[k].first + 1000 ){f->getH2("coincidences10000")->Fill(p.second, coincCheck[k].second);	f->getH1("pixelsfired10C" + to_string(coincCheck[k].second))->Fill( p.second );}
-								else if( p.first > coincCheck[k].first - 2000 && p.first < coincCheck[k].first + 2000 ){f->getH2("coincidences20000")->Fill(p.second, coincCheck[k].second);	f->getH1("pixelsfired20C" + to_string(coincCheck[k].second))->Fill( p.second );}
-								else if( p.first > coincCheck[k].first - 5000 && p.first < coincCheck[k].first + 5000 ){f->getH2("coincidences50000")->Fill(p.second, coincCheck[k].second);	f->getH1("pixelsfired50C" + to_string(coincCheck[k].second))->Fill( p.second );}
-								else if( p.first > coincCheck[k].first - 10000 && p.first < coincCheck[k].first + 10000 ){f->getH2("coincidences100000")->Fill(p.second, coincCheck[k].second);	f->getH1("pixelsfired100C" + to_string(coincCheck[k].second))->Fill( p.second );}
-								else{std::cout << p.first << " doesn't pass with " << coincCheck[k].first << std::endl;}*/
-							if( !(p.second.first == coincCheck[k].second.first && p.first == coincCheck[k].first) )								h3d->Fill(p.second.first,coincCheck[k].second.first, coincCheck[k].first - p.first);
-								if( f->helper->neighbour(p.second.first, coincCheck[k].second.first) )	neighbour++;
-								k++;
-							}
-
-//if(neighbour > 1)								std::cout << coincCheck.size() << "A" << k << "N:" << neighbour << std::endl;
-							if( neighbour == 0 )	f->getH2("pixelsCleaned0")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
-							if( neighbour > 0 )	f->getH2("pixelsCleaned1")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
-							if( neighbour > 1 )	{
-								f->getH2("pixelsCleaned2")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
-								f->getH2("neutronMfluxatrx0")->Fill(p.second.second.first,p.second.second.second);	//	intensity of neutrons over positions
-							}
-							if( neighbour > 2 )	f->getH2("pixelsCleaned3")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
-							if( neighbour > 3 )	f->getH2("pixelsCleaned4")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
-							if( neighbour > 4 )	f->getH2("pixelsCleaned5")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
-							if( neighbour > 5 )	f->getH2("pixelsCleaned6")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
-							if( neighbour > 6 )	f->getH2("pixelsCleaned7")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
-							if( neighbour > 7 )	f->getH2("pixelsCleaned8")->Fill((p.second.first-1)%8, floor((p.second.first-1)/8));	//	fill hit pattern
-							j++;
+							f->getH2("pixelsCleaned" + to_string(neighbour))->Fill((coincidences[j].second[0]-1)%8, floor((coincidences[j].second[0]-1)/8));	//	fill hit pattern
 
 						}
 
 						coincidences.clear();	//	reset coincidences vector
-						coincCheck.clear();	//	reset pixels in coincidence
 
 					}	//	end check of new beam pulse
 
@@ -136,17 +117,7 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 				}	//	end gate check
 
 			}	//	end neutron match
-			else
-			{	//	do not apply extra conditions
 
-				f->getH1("nrjC" + s)->Fill(nrj);	//	add to nrj histogram
-				f->getH1("nrj2C" + s)->Fill(nrj2);	//	add to nrj2 histogram
-
-			}	//	end no neutron match
-
-			f->getH2("timeVchan0")->Fill((timeb-timeLastB)%bpt, il);	//	channel V time
-			f->getH2("nrjVchan0")->Fill(nrj, il);	//	nrj V time
-			f->getH2("nrj2Vchan0")->Fill(nrj2, il);	//	nrj2 V time
 
 			if(	il == chanX )	{	//	do stuff with the x position
 				
@@ -160,15 +131,15 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 				
 			}	//	end doing stuff with theta
 
+			f->getH1("nrjC" + s)->Fill(nrj);	//	add to nrj histogram
+			f->getH1("nrj2C" + s)->Fill(nrj2);	//	add to nrj2 histogram
+			f->getH2("nrjVchan0")->Fill(nrj, il);	//	nrj V time
+			f->getH2("nrj2Vchan0")->Fill(nrj2, il);	//	nrj2 V time
+			f->getH2("timeVchan0")->Fill((timeb-timeLastB)%bpt, il);	//	channel V time
 			f->getH1("timeadjC" + s)->Fill(timeSinceB);	//	add to adjusted time histogram
-			f->getH1("nrjadjC" + s)->Fill( c->adjE(nrj) );	//	add to adjusted nrj histogram
-			f->getH1("nrj2adjC" + s)->Fill( c->adjE(nrj2) );	//	add to adjusted nrj2 histogram
 			f->getH2("timeadjVchan0")->Fill(timeSinceB, il);	//	channel V channel
-			f->getH2("nrjadjVchan0")->Fill(c->adjE(nrj), il);	//	energy V channel
-			f->getH2("nrj2adjVchan0")->Fill(c->adjE(nrj2), il);	//	nrj2 V channel
 			f->getH2("nrjVtime" + s)->Fill(timeSinceB, nrj);	//	energy V time
 			f->getH2("nrj2Vtime" + s)->Fill(timeSinceB, nrj2);	//	nrj2 V time
-
 
 		}	//	end valid channel check
 
@@ -188,7 +159,7 @@ void analysis::histogram_operations(fnt::FNT* f) {	//	start histogram alteration
 		std::cout << "Moving histograms to hists_" << folder << " folder..." << std::endl;	//	inform user
 		d = newHists->mkdir(("hists_" + folder).c_str());	//	make a folder
 
-		for( Int_t i = 0; i <= gmc; i++ ) {	//	for each channel number
+		for( UInt_t i = 0; i <= gmc; i++ ) {	//	for each channel number
 
 			s = f->helper->sanitiser(folder + to_string(i));	//	create name
 			h = (TH1D*)newHists->FindObjectAny(s.c_str());	//	histogram to move
@@ -235,7 +206,7 @@ void analysis::histogram_pretty(TTree* bigTree) {	//	output a colourful hit patt
 	}	//	end loop over histogram array
 
 	cA->SetLogy();	//	logarithmic scale
-	std::cout << "Colourful hit pattern is done!" << std::endl;
+	std::cout << "Colourful hit pattern is done!" << std::endl;	//	inform user
 
 }	//	end colourful hit pattern
 

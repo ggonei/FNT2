@@ -1,5 +1,5 @@
 //
-//	George O'Neill @ University of York, 2020/02/18
+//	George O'Neill @ University of York, 2020
 //
 //	This file is by design a simple separator for analysis
 //
@@ -7,14 +7,10 @@
 #define ANALYSIS_H
 #include "../include/FNT.h"
 
-//	C++ libraries
-#include <deque>
-
 //	ROOT libraries
 #include "TCanvas.h"
 #include "THStack.h"
 #include "TLegend.h"
-#include "TH3.h"
 
 namespace fnt {	//	create unique working area
 
@@ -35,6 +31,7 @@ class analysis {	//	main analysis object
 			bigTree->SetBranchAddress("timeOffset", &timeOffset);	//	set address to store time
 			n = f->getEntries();	//	set limit for for loop
 			bpt = f->getBPT();	//	get beam pulse time
+			coincWind = f->getCoincWind();	//	get coincidence window time
 			chanR = f->getChanR();	//	get theta channel
 			chanX = f->getChanX();	//	get xpos channel
 			gmc = f->getMaxChannels();	//	get maximum channel
@@ -56,11 +53,11 @@ class analysis {	//	main analysis object
 	private:
 		TChain* bigTree;	//	main tree
 		TFile* newHists;	//	histogram root file
-		Int_t bpt, chanR, chanX, il, gmc;	//	integer conversion of beam time, theta channel, x channel, label, maximum channel
+		Int_t bpt, chanR, chanX, coincWind, il;	//	integer conversion of beam time, theta channel, x channel, label
 		UChar_t label;	//	initialise variable to store labels
-		UInt_t nrj, nrj2, xPos, rPos;	//	initialise variables to store nrj, nrj2, x position, theta position
+		UInt_t gmc, nrj, nrj2, xPos, rPos;	//	initialise variables to store maximum channel, nrj, nrj2, x position, theta position
 		ULong64_t timeb, timeLastB, timeOffset, n;	//	initialise time branch variable, progress counter, time offset, and number of entries
-		
+
 
 };	//	end class analysis
 

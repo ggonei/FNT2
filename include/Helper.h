@@ -1,5 +1,5 @@
 //
-//	George O'Neill @ University of York, 2020/03/12
+//	George O'Neill @ University of York, 2020
 //
 //	This file holds helper functions used in various other parts of the code
 //
