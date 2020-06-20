@@ -15,7 +15,7 @@ const std::string FNT::fileHisto = filePrefix + "histos.txt";	//	path to channel
 
 FNT::FNT(const char* f, const char* h)	{	//	default constructor
 
-	ULong64_t timeb, timerunstart = -1, tprevious = 0, tOffset = 0;	//	initialise time branch variable and offsets
+	ULong64_t timeb, timerunstart = -1, tprevious = 0, tOffset = 0, timed, timebo;	//	initialise time branch variable and offsets
 
 	std::cout << "Tree output is in " << f << " and histograms will be saved in " << h << std::endl;	//	tell user some basic info
 	filename = f;	//	set tree filename
@@ -42,7 +42,7 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 		tree->SetBranchAddress("nrj", &nrj);	//	set address to store energy
 		tree->SetBranchAddress("time", &timeb);	//	set address to store time
 		n = tree->GetEntries();	//	initialise number of entries
-		Int_t chanb = getChanB(), chanr = getChanR(), chanx = getChanX();	//	get channel positions once
+		Int_t chanb = getChanB()->getChannelNumber(), chanr = getChanR()->getChannelNumber(), chanx = getChanX()->getChannelNumber();	//	get channel positions once
 		helper = new Helper(n);	//	required for countdown
 
 		for( ULong64_t i = 0; i < n; i++ ) {	//	loop over all entries
@@ -50,7 +50,8 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 			helper->countdown();	//	print progress
 			tree->GetEntry(i);	//	grab label
 			il = (Int_t) label;	//	convert label to integer
-			if( timeb < timerunstart ) {	//	look for clock reset
+
+			if( timeb < timerunstart && timeb > 0 ) {	//	look for clock reset
 
 				std::cout << std::endl << "Clock has been reset at time " << timeb << " (old time " << timerunstart << ") on entry number " << i << ", changing offset from " << tOffset << " to " << tprevious << std::endl;	//	inform user and write out a new line to step out of counter
 				tOffset += tprevious;	//	get time offset for use in setting beam pulse time
@@ -59,12 +60,16 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 
 			}	//	end clock reset check
 
-			if( il == chanb ) setTimeLastB(timeb + tOffset);	//	update beam time if there is one
-			else if( il == chanr ) setRPosition(nrj);	//	update theta if there is one
-			else if( il == chanx ) setXPosition(nrj);	//	update xpos if there is one
+			tprevious = timeb;	//	store current event time for next event clock comparison
+//			timebo = timeb + tOffset;	//	offsetted time
+//			timed = timebo - timeLastB;	//	time difference from offsetted time to beam pulse
+			if( il == chanb )	setTimeLastB(timeb + tOffset);	//	update beam time if there is one
+//			else if( timed > beamPulseTime )	setTimeLastB(timebo - timed%beamPulseTime);	//	else update if one is needed
+
+			if( il == chanr )	setRPosition(nrj);	//	update theta if there is one
+			else if( il == chanx )	setXPosition(nrj);	//	update xpos if there is one
 
 			addedTree->Fill();	//	fill new branches
-			tprevious = timeb;	//	store current event time for next event clock comparison
 
 		}	//	end loop over all entries
 
@@ -105,7 +110,7 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 
 
 
-Channel* FNT::addChannel( char d, Int_t n, Int_t p /* = -1 */ ) {	//	add channel( type, channel, pixel )
+Channel* FNT::addChannel( char d, Int_t n, Int_t p /* = 0 */ ) {	//	add channel( type, channel, pixel )
 
 	Channel* x = new Channel(d, n, p);	//	create new channel
 	channels.insert({n, x});	//	add a new channel to the map

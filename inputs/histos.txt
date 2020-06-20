@@ -1,30 +1,35 @@
-2-D	Name	X:Bins	Min	Max	Y:Bins	Min	Max
+Number	Name	X:Bins	Min	Max	Y:Bins	Min	Max	Z:Bins	Min	Max
 -0 = 1-D, 0 = 3-D 1 = 2-D, -x = x 1-D histograms, x = x 1-D histograms (remember all singular end in '0'!)
--0	HitPattern					256	0	256
--0	HitPatternNeutrons	256	0	256
--0 NeutronFlux					20000	7e10	2.1207e16
-1	NeutronRatePerPixel		20000	7e10	2.1207e16	64	0	64
--0	neutronfluxatx	5000	0	250000
--0	neutronfluxatr	1500	0	15000
--255	timeC			500	0	2000000
--255	nrjC			20000	0	1000000
--255	nrj2C			2000	0	10000
--255	time_adjC	8000	0	2000000
--255	nrj_adjC		1000	0	1000000
--255	nrj2_adjC	1000	0	1000000
-255 nrjVtime	 	400		0	2000000	400	0	40000
-255 nrj2Vtime	 	400		0	2000000	400	0	40000
-1	timeVchan			4000	0	2000000	256	0		256
-1	timeVneutrons	20000	0	2000000	64	0	64
-1	nrjVchan			2000	0	10000	256	0	256
-1	nrj2Vchan			2000	0	10000	256	0	256
-1	timeadjVchan	4000	0	2000000	256	0	256
-1	timeadjVneutrons	4000	0	2000000	64	0	64
-1	nrjadjVchan		1000	0	1000000	256	0	256
-1	nrj2adjVchan	1000	0	1000000	256	0	256
-1	xVtime				3000	7e10	3.00007e15	2500	0	250000
-1	rVtime				3000	7e10	3.00007e15	2500	0	250000
-1	neutronfluxatrx	5000	0	250000	5000	0	250000
-1	pixels	8	0	8	8	0	8
-9	pixelsCleaned	8	0	8	8	0	8
-0	coincTimeMap	64	0	64	64	0	64	500	0	500
+-0	HitPattern						256	   0				256
+-0	HitPatternNeutrons		 64	   0				 64
+-0	NeutronFlux					20000	7e10	2.1207e16
+-0	GammaFlux						20000	7e10	2.1207e16
+-0	TotalGammaFlux			20000	7e10	2.1207e16
+1	NeutronRatePerPixel		20000	7e10	2.1207e16	  66	0			66
+-0	neutronfluxatx			 5000	   0		 250000
+-0	neutronfluxatr			 5000	   0		 250000
+-255	timeC							 5000	   0		  40000
+-255	nrjC							20000	   0		1000000
+-255	nrj2C							20000	   0		1000000
+-255	time_adjC					 5000	   0		  40000
+-255	nrj_adjC					 5000	   0		  50000
+-255	nrj2_adjC					 5000	   0		  50000
+255	nrjVtime							400	   0		  40000	4000	  0	 40000
+255	nrjadjVtimeadj				400	   0		  40000	4000	  0	 40000
+255	nrj2Vtime							400	   0		  40000	4000	  0	 40000
+1	timeVchan							 4000	   0		  40000	 256	  0		 256
+1	timeVneutrons					20000	   0		  40000		66	  0		  66
+1	nrjVchan							 2000	   0		1000000	 256	  0		 256
+1	nrj2Vchan							 2000	   0		1000000	 256	  0		 256
+1	timeadjVchan					  500	   0		 400000	 256	  0		 256
+1	timeadjVneutrons			  500	   0		 400000	  66	  0		  66
+1	timeadjVgammas					500	   0		 400000	   3	  0			 3
+1	nrjadjVchan						 5000	   0			50000	 256	  0		 256
+1	nrj2adjVchan					 5000	   0			50000	 256	  0		 256
+1	xVtime								 3000	7e10	2.1207e16	2500	  0	250000
+1	rVtime								 3000	7e10	2.1207e16	2500	  0	250000
+1	neutronfluxatrx				  500	   0		 250000	 500	  0	250000
+1	neutronfluxatrxCal		  400	 -20		     20	 400	-20	   380
+1	pixels									  8	   0					8	   8	  0			 8
+9	pixelsCleaned						  8	   0					8	   8	  0			 8
+0	coincTimeMap						 66	   0		 		 66	  66	  0			66	10000	-100000	400000

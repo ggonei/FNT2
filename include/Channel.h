@@ -20,7 +20,7 @@ namespace fnt {	//	create unique working area
 class Channel {	//	object for channels
 
 	public:
-		Channel( char c, Int_t n, Int_t p = -1 ) {	//	default constructor
+		Channel( char c, Int_t n, Int_t p = 0 ) {	//	default constructor
 			channelNumber = n;	//	set channel number
 			type = c;	//	set channel type
 			pixelNumber = p;	//	set pixel number

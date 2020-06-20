@@ -33,10 +33,12 @@ class FNT {	//	main analysis object
 		FNT(const char* f = "out.root", const char* h = "histograms.root");	//	default constructor
 		~FNT() {}	//	destructor
 		
-		Channel* addChannel( char d, int n, int p = -1 );	//	add new channel
+		Channel* addChannel( char d, int n, int p = 0 );	//	add new channel
 		Channel* getChannel(int i) { if( channels.count(i) ) return channels.at(i); else return NULL; }	//	check for existence of and return channel( channel )
-		Helper* helper;	//	required for countdown, sanitiser
-		
+		Channel* getChanB() { return getChannel(beamChannel); }	//	get beam channel
+		Channel* getChanR() { return getChannel(thetChannel); }	//	get tpos channel
+		Channel* getChanX() { return getChannel(xposChannel); }	//	get xpos channel
+		Helper* helper;	//	required for countdown, sanitiser		
 		TChain* chainer();	//	combine tree files
 		TChain* getTree() { return tree; }	//	get xpos channel
 		TTree* newTree() { return addedTree; }	//	get new tree
@@ -44,11 +46,7 @@ class FNT {	//	main analysis object
 		TH1D* getH1(string s) { return h1s.at(s); }	//	return histogram
 		TH2D* getH2(string s) { return h2s.at(s); }	//	return histogram
 		TH3D* getH3(string s) { return h3s.at(s); }	//	return histogram
-
 		Int_t getBPT() { return beamPulseTime; }	//	get time between beam pulses
-		Int_t getChanB() { return beamChannel; }	//	get beam channel
-		Int_t getChanR() { return thetChannel; }	//	get tpos channel
-		Int_t getChanX() { return xposChannel; }	//	get xpos channel
 		Int_t getCoincWind() { return coincWind; }	//	get time between beam pulses
 		const char* getFilename() { return filename; }	//	get root file name
 		const char* getHFilename() { return fileRootH; }	//	get histograms file name
@@ -77,8 +75,8 @@ class FNT {	//	main analysis object
 
 
 	private:
-		static const int beamPulseTime = 400000;	//	time between beam pulses in picoseconds
-		static const int coincWind = 40;	//	coincidence window
+		static const int beamPulseTime = 40000;	//	time between beam pulses in ticks
+		static const int coincWind = 40000;	//	coincidence window
 		static const int totalChannels = 98;	//	highest useful channel
 		static const std::string filePrefix;	//	path to files
 		static const std::string fileChannel;	//	path to channel mapping

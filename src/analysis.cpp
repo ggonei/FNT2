@@ -11,10 +11,11 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 	Channel* c;	//	allocate channel pointer
 	std::vector<std::pair<Long64_t,std::array<UInt_t,3>>> coincidences;	//	hold events occurring in same time pulse
-	Double_t flux = 0;	//	flux
-	Int_t npixel, timeSinceB;	//	get pixel, time since beam, coincidence size
+	deque<ULong64_t>* flux = new deque<ULong64_t>();	//	flux holder
+	Double_t nrjadj, nrj2adj;	//	calibrated energy
+	Int_t npixel, timeSinceB, unadjT;	//	get pixel, time since beam
 	std::string s;	//	string for names
-	UInt_t coincSize = 0, k = 0, neighbour = 0, xPrev = 20001;	//	counters, neighbours, previous x position
+	UInt_t coincSize = 0, k = 0, neighbour = 0;	//	counters, neighbours, previous x position
 	ULong64_t timeLastBp = 0, timein = 0, tarr[65];	//	previous beam pulse time, time in to beam pulse, coincidence array
 	f->helper->resetCountdown();	//	reset countdown in case it has been used prior
 
@@ -30,52 +31,31 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 			timeb = timeb + timeOffset;	//	adjust timeb to include offset
 			s = to_string(il);	//	get channel number stored as string
+			nrjadj = c->adjE(nrj);	//	calibrate nrj
+			nrj2adj = c->adjE(nrj2);	//	calibrate nrj2
 			timeSinceB = (timeb-timeLastB-c->getTOffset())%bpt;	//	store aligned time
-			f->getH1("timeC" + s)->Fill((timeb-timeLastB)%bpt);	//	add to time histogram
+			unadjT = (timeb-timeLastB)%bpt;	//	store unadjusted time
+			f->getH1("timeC" + s)->Fill(unadjT);	//	add to time histogram
 			npixel = c->getPixelNumber();	//	store pixel
 
 			if( npixel > 0 )	{	//	neutron gate alternatively il>10&&il<90&&(il%10>0&&il%10<9)
 
-				f->getH2("timeVneutrons0")->Fill((timeb-timeLastB)%bpt, npixel);	//	neutron channels V time
-				f->getH2("timeadjVneutrons0")->Fill(timeSinceB, npixel);	//	time adjusted V channel
+				f->getH2("timeVneutrons0")->Fill(unadjT, npixel);	//	neutron channels V time
 
-				if( c->passes(timeSinceB, 't') )	{	//	if passing channel gate
+				if( c->passes(timeSinceB, 't') ){//&& c->passes(nrjadj, 'e') )	{	//	if passing channel gate
 
-					if( xPos <= 20000 || xPos >= 202000 )	{	//	if we are at the edge of the table
-
-						if( xPrev > 20000 && xPrev < 202000 )	{	//	if the last entry was on the table
-
-							flux = 0;	//	reset flux
-							timein = timeb;	//	set time into 
-
-						}	//	end edge entry check
-
-						flux++;	//	increment flux
-
-					}	//	end table edge check
-					else if( xPrev <= 20000 || xPrev >= 202000 )	{	//	else if the last entry was at the edge of the table
-
-						flux = flux / ((timeb - timein) / 1e12);	//	edit flux from raw counts to per second
-						f->getH1("NeutronFlux0")->Fill(timeb, flux);	//	plot flux
-
-					}	//	end table edge check
-
-					if( flux > 0 )	{	//	if flux is observed
-
-						f->getH2("NeutronRatePerPixel0")->Fill(timeb, npixel);	//	add hit to rate for pixel
-
-					}	//	end flux observed check
-
+					f->getH2("NeutronRatePerPixel0")->Fill(timeb, npixel);	//	add hit to rate for pixel
 					f->getH2("pixels0")->Fill((npixel-1)%8, floor((npixel-1)/8));	//	fill hit pattern
-					f->getH1("HitPatternNeutrons0")->Fill(il);	//	neutrons hit pattern
-					f->getH2("neutronfluxatrx0")->Fill(xPos, rPos, 1/(1+flux));	//	intensity of neutrons over positions
+					f->getH1("HitPatternNeutrons0")->Fill(npixel);	//	neutrons hit pattern
+					f->getH2("neutronfluxatrx0")->Fill(xPos, rPos);	//	intensity of neutrons over positions
+					f->getH2("neutronfluxatrxCal0")->Fill(cX->adjE(xPos), cR->adjE(rPos), (double)1/(1+flux->size()));	//	intensity of calibrated
 					f->getH1("neutronfluxatx0")->Fill(xPos);	//	intensity of neutrons at x
 					f->getH1("neutronfluxatr0")->Fill(rPos);	//	intensity of neutrons at r
-					f->getH1("nrjadjC" + s)->Fill(c->adjE(nrj));	//	add to nrj histogram
-					f->getH1("nrj2adjC" + s)->Fill(c->adjE(nrj2));	//	add to nrj2 histogram
-					f->getH2("nrjadjVchan0")->Fill(c->adjE(nrj), il);	//	energy V channel
-					f->getH2("nrj2adjVchan0")->Fill(c->adjE(nrj2), il);	//	nrj2 V channel
-					xPrev = xPos;	//	store previous x position
+					f->getH2("timeadjVneutrons0")->Fill(timeSinceB, npixel);	//	time adjusted V channel
+					f->getH1("nrjadjC" + s)->Fill(nrjadj);	//	add to nrj histogram
+					f->getH1("nrj2adjC" + s)->Fill(nrj2adj);	//	add to nrj2 histogram
+					f->getH2("nrjadjVchan0")->Fill(nrjadj, il);	//	energy V channel
+					f->getH2("nrj2adjVchan0")->Fill(nrj2adj, il);	//	nrj2 V channel
 
 					if( timeLastB == timeLastBp )	{	//	if this entry belongs to current beam pulse
 
@@ -104,9 +84,18 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 							}	//	end coincidence time check
 
-							f->getH2("pixelsCleaned" + to_string(neighbour))->Fill((coincidences[j].second[0]-1)%8, floor((coincidences[j].second[0]-1)/8));	//	fill hit pattern
+							if(neighbour < 9)	{	//	if a 'real' number of neighbours was seen
 
-						}
+								f->getH2("pixelsCleaned" + to_string(neighbour))->Fill((coincidences[j].second[0]-1)%8, floor((coincidences[j].second[0]-1)/8));	//	add to appropriate hit patten
+
+							}	//	end real number of neighbours
+							else	{	//	fill overflow plot
+
+								f->getH2("pixelsCleaned9")->Fill((coincidences[j].second[0]-1)%8, floor((coincidences[j].second[0]-1)/8));	//	overflow hit pattern
+
+							}	//	end neighbour hit patterns
+
+						}	//	end coincidence check for loop
 
 						coincidences.clear();	//	reset coincidences vector
 
@@ -114,32 +103,57 @@ void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
 
 					timeLastBp = timeLastB;	//	store this beam pulse time for a valid neutron for comparisons
 
-				}	//	end gate check
+				}	//	end neutron gate check
 
 			}	//	end neutron match
+			else if( npixel < 0 )	{	//	check for germanium
 
+				npixel = abs(npixel);	//	adjust npixel to number
+				f->getH1("TotalGammaFlux0")->Fill(timeb);	//	add gamma count
+
+				if( c->passes(nrjadj, 'e') )	{	//	if we pass the energy gate
+
+					flux->push_back(timeb);	//	add time
+					while( flux[0][0] < timeb - 1e13 && flux->size() > 0 )	flux->pop_front();	//	clear earlier entries in flux
+					f->getH1("GammaFlux0")->Fill(timeb);	//	add gamma count
+
+				}	//	end table edge check
+
+				if( c->passes(timeSinceB, 't') )	{	//	if passing channel gate
+
+					f->getH2("timeadjVgammas0")->Fill(timeSinceB, npixel);	//	time adjusted V gamma
+					f->getH1("nrjadjC" + s)->Fill(nrjadj);	//	add to nrj histogram
+					f->getH1("nrj2adjC" + s)->Fill(nrj2adj);	//	add to nrj2 histogram
+					f->getH2("nrjadjVchan0")->Fill(nrjadj, il);	//	energy V channel
+					f->getH2("nrj2adjVchan0")->Fill(nrj2adj, il);	//	nrj2 V channel
+
+				}	//	end gamma gate check
+
+			}	//	end pixels
 
 			if(	il == chanX )	{	//	do stuff with the x position
-				
+
 				f->getH2("xVtime0")->Fill(timeb, nrj);	//	x position V time
-				
+
 			}	//	end doing stuff with x
 
 			if(	il == chanR )	{	//	do stuff with the theta position
-				
+
 				f->getH2("rVtime0")->Fill(timeb, nrj);	//	theta position V time
-				
+
 			}	//	end doing stuff with theta
 
 			f->getH1("nrjC" + s)->Fill(nrj);	//	add to nrj histogram
 			f->getH1("nrj2C" + s)->Fill(nrj2);	//	add to nrj2 histogram
-			f->getH2("nrjVchan0")->Fill(nrj, il);	//	nrj V time
+			f->getH2("nrjVchan0")->Fill(nrjadj, il);	//	nrj V time
 			f->getH2("nrj2Vchan0")->Fill(nrj2, il);	//	nrj2 V time
-			f->getH2("timeVchan0")->Fill((timeb-timeLastB)%bpt, il);	//	channel V time
+			f->getH2("timeVchan0")->Fill(unadjT, il);	//	channel V time
+			f->getH2("nrjVtime" + s)->Fill(unadjT, nrj);	//	energy V time
+			f->getH2("nrj2Vtime" + s)->Fill(unadjT, nrj2);	//	nrj2 V time
 			f->getH1("timeadjC" + s)->Fill(timeSinceB);	//	add to adjusted time histogram
 			f->getH2("timeadjVchan0")->Fill(timeSinceB, il);	//	channel V channel
-			f->getH2("nrjVtime" + s)->Fill(timeSinceB, nrj);	//	energy V time
-			f->getH2("nrj2Vtime" + s)->Fill(timeSinceB, nrj2);	//	nrj2 V time
+			f->getH2("nrjadjVtimeadj" + s)->Fill(timeSinceB, nrjadj);	//	corrected energy V time
+			f->getH2("nrjadjVchan0")->Fill(nrjadj, il);	//	corrected nrj V time
 
 		}	//	end valid channel check
 
@@ -168,7 +182,7 @@ void analysis::histogram_operations(fnt::FNT* f) {	//	start histogram alteration
 
 				if( folder == "timeC" || folder == "nrjC" )	{	//	if time or energy spectrum
 
-					f->helper->peakf(h, folder);	//	get peak positions
+//					f->helper->peakf(h, folder);	//	get peak positions
 
 				}	//	end time spectrum specialisations
 

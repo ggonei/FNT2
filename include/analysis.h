@@ -7,6 +7,9 @@
 #define ANALYSIS_H
 #include "../include/FNT.h"
 
+//	C++ libraries
+#include <deque>
+
 //	ROOT libraries
 #include "TCanvas.h"
 #include "THStack.h"
@@ -32,8 +35,10 @@ class analysis {	//	main analysis object
 			n = f->getEntries();	//	set limit for for loop
 			bpt = f->getBPT();	//	get beam pulse time
 			coincWind = f->getCoincWind();	//	get coincidence window time
-			chanR = f->getChanR();	//	get theta channel
-			chanX = f->getChanX();	//	get xpos channel
+			cR = f->getChanR();	//	get theta channel
+			cX = f->getChanX();	//	get xpos channel
+			chanR = cR->getChannelNumber();	//	get theta channel number
+			chanX = cX->getChannelNumber();	//	get xpos channel number
 			gmc = f->getMaxChannels();	//	get maximum channel
 			do_analysis(f);	//	do analysis
 			std::cout << std::endl;	//	output a clean line after the countdown
@@ -53,6 +58,7 @@ class analysis {	//	main analysis object
 	private:
 		TChain* bigTree;	//	main tree
 		TFile* newHists;	//	histogram root file
+		Channel *cR, *cX;	//	position channels
 		Int_t bpt, chanR, chanX, coincWind, il;	//	integer conversion of beam time, theta channel, x channel, label
 		UChar_t label;	//	initialise variable to store labels
 		UInt_t gmc, nrj, nrj2, xPos, rPos;	//	initialise variables to store maximum channel, nrj, nrj2, x position, theta position
