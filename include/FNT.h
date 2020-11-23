@@ -9,6 +9,7 @@
 //std libraries
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -20,6 +21,7 @@
 #include <TH2D.h>
 #include <TH3D.h>
 #include <TSystem.h>
+#include <TStopwatch.h>
 
 //	FNT2 libraries
 #include "../include/Channel.h"
@@ -33,21 +35,19 @@ class FNT {	//	main analysis object
 		FNT(const char* f = "out.root", const char* h = "histograms.root");	//	default constructor
 		~FNT() {}	//	destructor
 		
-		Channel* addChannel( char d, int n, int p = 0 );	//	add new channel
-		Channel* getChannel(int i) { if( channels.count(i) ) return channels.at(i); else return NULL; }	//	check for existence of and return channel( channel )
+		Channel* addChannel( char d, Int_t n, Double_t p = 0 );	//	add new channel
+		Channel* getChannel(Int_t i) { if( channels.count(i) ) return channels.at(i); else return NULL; }	//	check for existence of and return channel( channel )
 		Channel* getChanB() { return getChannel(beamChannel); }	//	get beam channel
 		Channel* getChanR() { return getChannel(thetChannel); }	//	get tpos channel
 		Channel* getChanX() { return getChannel(xposChannel); }	//	get xpos channel
 		Helper* helper;	//	required for countdown, sanitiser		
 		TChain* chainer();	//	combine tree files
 		TChain* getTree() { return tree; }	//	get xpos channel
-		TTree* newTree() { return addedTree; }	//	get new tree
 		TFile* histFile() { return newHists; }	//	get histogram root file
-		TH1D* getH1(string s) { return h1s.at(s); }	//	return histogram
-		TH2D* getH2(string s) { return h2s.at(s); }	//	return histogram
-		TH3D* getH3(string s) { return h3s.at(s); }	//	return histogram
-		Int_t getBPT() { return beamPulseTime; }	//	get time between beam pulses
-		Int_t getCoincWind() { return coincWind; }	//	get time between beam pulses
+		TH1D* getH1(string s) { return h1s.at(s);/*hs(&h1s,s);*/ }	//	get 1-D histogram
+		TH2D* getH2(string s) { return h2s.at(s);/*hs(&h2s,s);*/ }	//	get 2-D histogram
+		TH3F* getH3(string s) { return h3s.at(s);/*hs(&h3s,s);*/ }	//	get 3-D histogram
+		ULong64_t getEntries() { return n; }	//	total entries in tree
 		const char* getFilename() { return filename; }	//	get root file name
 		const char* getHFilename() { return fileRootH; }	//	get histograms file name
 		std::string getFileChannels() { return fileChannel; }	//	get channel map path
@@ -57,27 +57,17 @@ class FNT {	//	main analysis object
 		std::vector<std::string> getFolders() { return folders; }	//	get folder names
 		short getMaxChannels() { return totalChannels; }	//	get highest useful channel
 		short getNumChans() { return channels.size(); }	//	get xpos channel
-
 		void addFriend(TTree* t) { tree->AddFriend(t); };	//	add friend to our tree
-		void setChanB(int n) { beamChannel = n; }	//	set beam clock( channel )
-		void setChanR(int n) { thetChannel = n; }	//	set theta position( channel )
-		void setChanX(int n) { xposChannel = n; }	//	set table x position( channel )
-		void setRPosition(UInt_t nrj) { rPosition = nrj; }	//	set time of last theta position
-		void setTimeLastB(ULong64_t timeb) { timeLastB = timeb; }	//	set time of last beam pulse
-		void setXPosition(UInt_t nrj) { xPosition = nrj; }	//	set time of last x position
-		void setTimeOffset(ULong64_t tprevious) { timeOffset = tprevious; }	//	set time offset
-
+		void setMovedFlag(bool m) { movedFlag = m; }	//	set movedFlag flag
+		void setTimeOffset(ULong64_t t) { timeOffset = t; }	//	set time offset
 		bool addChannels();	//	add channels
 		bool addGates();	//	add gates
 		bool getHists();	//	get histograms
 		bool histo(Float_t t, std::string n, Int_t xbins = 1000, Double_t xmin = 0, Double_t xmax = 10000, Int_t ybins = 1000, Double_t ymin = 0, Double_t ymax = 10000, Int_t zbins = 1000, Double_t zmin = 0, Double_t zmax = 10000 );	//	add histogram
-		ULong64_t getEntries() { return n; }	//	total entries in tree
 
 
 	private:
-		static const int beamPulseTime = 40000;	//	time between beam pulses in ticks
-		static const int coincWind = 40000;	//	coincidence window
-		static const int totalChannels = 98;	//	highest useful channel
+		static const Int_t totalChannels = 98;	//	highest useful channel
 		static const std::string filePrefix;	//	path to files
 		static const std::string fileChannel;	//	path to channel mapping
 		static const std::string fileFiles;	//	path to DataTree root file list
@@ -88,18 +78,36 @@ class FNT {	//	main analysis object
 		TChain* tree;	//	chain of files used for analysis;
 		TFile* file;	//	tree file
 		TFile* newHists;	//	histograms file
-		TTree* addedTree;	//	new tree to add branches to
-		UInt_t rPosition = 0, xPosition = 0;	//	variables to store theta and x
-		ULong64_t timeLastB = 0, timeOffset = 0, n = 0;	//	value for most recent beam pulse, time offset, number of entries
-		TBranch *bp, *br, *bt, *bx;	//	new branches for last beam pulse, theta position, time offset, x position
+		TTree* addedTree;	//	new tree to add first pass branches
+		TTree* indexTree;	//	index tree for moved entries
+		Bool_t movedFlag = false;	//	moved flag
+		ULong64_t timeOffset = 0, n = 0;	//	value for time offset, number of entries
+		TBranch *bi, *bm, *bt, *be;	//	new branches for actual index, moved flag, time offset, moved entry list
 		Int_t beamChannel = -1, thetChannel = -1, xposChannel = -1;	//	essential channels
 		std::unordered_map<int, Channel*> channels;	//	all channels
 		std::unordered_map<std::string, TH1D*> h1s;	//	1-D histograms
 		std::unordered_map<std::string, TH2D*> h2s;	//	2-D histograms
-		std::unordered_map<std::string, TH3D*> h3s;	//	3-D histograms
+		std::unordered_map<std::string, TH3F*> h3s;	//	3-D histograms
 		std::vector<Channel*> neutrons, germaniums, labr;	//	channels by detector group
 		std::vector<std::string> folders;	//	folders
+		std::vector<ULong64_t> movedEntry;	//	list of moved entries
+/*		//	this template would be great, but it is really, unreasonably slow.  Use it for debugging histograms, otherwise stay away...
+		template<class T> T hs(unordered_map<std::string, T> *h, std::string s) {	//	histogram lookup function
 
+			try {	//	try...
+
+				return h->at(s);	//	...to lookup histogram
+
+			}	//	end attempt
+			catch(const std::out_of_range& e) {	//	failing lookup
+
+				std::cerr << std::endl << std::endl << "Failed at " << s << std::endl << std::endl;	//	tell user which histogram we are on
+				exit(-1);	//	kill program as clean as possible
+
+			}	//	end histogram fail
+
+		}	//	histogram lookup
+*/
 
 };	//	end class FNT
 

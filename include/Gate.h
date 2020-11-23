@@ -20,7 +20,8 @@ class Gate {	//	object for channels
 		
 		ULong64_t min() { return low; }	//	get gate minimum
 		ULong64_t max() { return high; }	//	get gate maximum
-		bool passes( ULong64_t e ) { return (min() <= e && max() >= e); }	//	check if energy is inside gate( energy )		
+		Double_t percentage(Double_t n) { return (high - low) / n; }	//	get percentage covered
+		bool passes( ULong64_t e ) { return (low <= e && high >= e); }	//	check if energy is inside gate( energy )		
 
 	private:
 		char type;	//	gate type

@@ -29,7 +29,7 @@ class Helper {	//	object for channels
 		
 		void resetCountdown() { percent = -1; countdownN = 1; }	//	reset countdown
 		void countdown();	//	print progress
-		void peakf( TH1D* h, std::string s );	//	find peaks
+		TFitResultPtr peakf( TH1D* h, std::string s );	//	find peaks
 //		Int_t getPixelNE(Int_t n = 1) { return ( getPixelE(n) != nonPixel ? getPixelN(n) + n : nonPixel); }	//	get pixel number n rows above and right
 		Int_t getPixelN(Int_t pixel, Int_t n = 1) { return pixel + n*8; }	//	get pixel number n rows above
 		Int_t getPixelE(Int_t pixel, Int_t n = 1) { return ( ( 8 - ( pixel - 1 ) % 8 ) > n ? pixel + n : nonPixel ); }	//	get pixel number n after

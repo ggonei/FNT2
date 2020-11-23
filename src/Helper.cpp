@@ -25,7 +25,7 @@ void Helper::countdown() {	//	print progress
 }	//	end countdown
 
 
-void Helper::peakf( TH1D* h, std::string s ) {	//	find main peaks of spectrum
+TFitResultPtr Helper::peakf( TH1D* h, std::string s ) {	//	find main peaks of spectrum
 
 	std::string channel = std::string(h->GetName()).substr(s.length());	//	channel name
 	TSpectrum* finder = new TSpectrum();	//	peak fitting spectrum
@@ -36,9 +36,10 @@ void Helper::peakf( TH1D* h, std::string s ) {	//	find main peaks of spectrum
 	Double_t pCut = 0.9, pWidth, fitMean, fitSigma, source[nbins], dest[nbins], dest2[nbins], *xpeaks;	//	store fit parameters, histogram arrays
 	ULong64_t binMultiplier = (abs(xmin) + abs(xmax)) / nbins;	//	convert bin number to value
 
-	for( Int_t i = 0; i < nbins; i++ )	source[i] = h->GetBinContent(i + 1);	//	set source array from histogram
+	for( Int_t i = 0; i < nbins; i++ )	//	for each bin
+		source[i] = h->GetBinContent(i + 1);	//	set array element from histogram
 
-	if( s.find("nrj") + 1 )	{	//	if there are energy peaks
+	if( s.find("nrj") + 1 )	{	//	if this is an energy spectrum
 
 		finder->SearchHighRes(source, dest2, nbins, 1, 10, kFALSE, 3, kFALSE, 50);	//	smooth peaks without removing background
 
@@ -52,7 +53,8 @@ void Helper::peakf( TH1D* h, std::string s ) {	//	find main peaks of spectrum
 
 	if( finder->GetNPeaks() > 0 )	{	//	if there are peaks
 
-		for( Int_t i = 0; i < nbins; i++ )	hFitted->SetBinContent(i + 1, dest2[i]);	//	fill histogram to fit
+		for( Int_t i = 0; i < nbins; i++ )	//	for each bin
+			hFitted->SetBinContent(i + 1, dest2[i]);	//	fill histogram to fit
 
 		xpeaks = finder->GetPositionX();	//	get peaks
 		fitMean = xpeaks[0] * binMultiplier;	//	mean of fit
@@ -62,24 +64,25 @@ void Helper::peakf( TH1D* h, std::string s ) {	//	find main peaks of spectrum
 		fitMean = fitResult->Parameter(1);	//	mean of fit
 		fitSigma = 2*fitResult->Parameter(2);	//	sigma of fit
 
-		if( fitSigma < 0.075 * (xmax - xmin) )	{	//	check fwtm is less than an amount of range
+		if( fitSigma > 0.075 * (xmax - xmin) )	//	check fwtm is less than an amount of range
+			std::cout << "*** WARNING *** Channel " << channel << " is very noisy, with sigma of fit = " << fitSigma << std::endl;	//	print failure
 
-			std::cout << "Neutron " << s << " for channel " << channel << ":\t" << round(fitMean) << "\tgate low:\t" << round(fitMean - fitSigma) << "\tgate high:\t" << round(fitMean + fitSigma);	//	print neutron offset, gate
+		std::cout << s << " for channel " << channel << ":\t" << round(fitMean) << "\tgate low:\t" << round(fitMean - fitSigma) << "\tgate high:\t" << round(fitMean + fitSigma);	//	print neutron offset, gate
 
-			if( sizeof(xpeaks)/sizeof(Double_t*) > 1)	std::cout << "\tgamma " + s + " offset:\t" << xpeaks[1] * binMultiplier;	//	print gamma offset
-
-		}	else std::cout << "Channel " << channel << " is too noisy, with sigma of fit = " << fitSigma;	//	print failure
+		if( sizeof(xpeaks) / sizeof(Double_t*) > 1)
+			std::cout << "\tgamma " + s + " offset:\t" << xpeaks[1] * binMultiplier;	//	print gamma offset
 
 		std::cout << std::endl;	//	end line
 
 	}	//	end peaks check
 	
 	delete hFitted;	//	remove histogram from memory and file
+	return fitResult.Get();	//	send something useful back to user
 
 }	//	end peakfinder( TH1D, string )
 
 
-std::string Helper::sanitiser( std::string s ) {	//	sanitise histogram names
+std::string Helper::sanitiser( std::string s ) {	//	sanitise ROOT names
 
 	s.erase(std::remove_if(s.begin(), s.end(), []( char const& c ) -> bool { return !std::isalnum(c); } ), s.end());	//	strip invalid name characters
 	return s;	//	return edited string

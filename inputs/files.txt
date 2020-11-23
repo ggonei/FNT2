@@ -1,2 +1,19 @@
 This is simply a list of paths to files that you want to use to make your root file; make sure to keep the last line clear!
-/mnt/d/fnt/rootfiles/iron_0008.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0001.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0002.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0003.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0004.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0005.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0006.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0007.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0008.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0009.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0010.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0011.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0012.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0013.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0014.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0015.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0016.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0017.root
+/mnt/d/fnt/newrootfiles/iron_test_1_0018.root

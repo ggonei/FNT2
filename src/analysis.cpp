@@ -4,171 +4,224 @@
 //	This file is by design a simple separator for analysis
 //
 #include "../include/analysis.h"
+//#define TIMEFULLCAL true	//	uncomment to just generate 3-D time map against all pixels
 
 namespace fnt {	//	create unique working area
 
-void analysis::do_analysis(fnt::FNT* f) {	//	start analysis
+void analysis::doAnalysis(fnt::FNT* f) {	//	start analysis
 
+	Bool_t addOnce;	//	flag for coincidence gate for gammas
 	Channel* c;	//	allocate channel pointer
-	std::vector<std::pair<Long64_t,std::array<UInt_t,3>>> coincidences;	//	hold events occurring in same time pulse
-	deque<ULong64_t>* flux = new deque<ULong64_t>();	//	flux holder
-	Double_t nrjadj, nrj2adj;	//	calibrated energy
-	Int_t npixel, timeSinceB, unadjT;	//	get pixel, time since beam
-	std::string s;	//	string for names
+	char dtypej, dtypek;	//	detector type
+	std::vector<std::pair<Int_t, std::pair<Channel*, Double_t>>> coincidences;	//	hold events occurring in same time pulse
+	Double_t nrjCal, npixel, w;	//	calibrated energy, pixel number, weight
+	Int_t timed, timeSinceB, npixelcj, npixelck, gateNumber, gateSpecif;	//	time difference, calibrated time since beam, x, r, coincident pixel number j, coincident pixel number k, gate number, specific gate type
+	std::string s, bgHist;	//	string for names, background or normal
 	UInt_t coincSize = 0, k = 0, neighbour = 0;	//	counters, neighbours, previous x position
-	ULong64_t timeLastBp = 0, timein = 0, tarr[65];	//	previous beam pulse time, time in to beam pulse, coincidence array
+	std::unordered_map<int,bool> gammaFlag;
+	std::map<std::pair<bool,int>,bool> gateFlag;
+	ULong64_t movedEntrySize, timeLastB = 0, timeLastBp = 0, timebo, tarr[65];	//	entry size, time of last beam pulse, previous beam pulse time, offsetted time, time since pixel as beam, stop repeat coincident gate, stop repeat coincident gamma
 	f->helper->resetCountdown();	//	reset countdown in case it has been used prior
 
 	for( ULong64_t i = 0; i < n; i++ ) {	//	loop over all entries
 
 		f->helper->countdown();	//	print progress
-		bigTree->GetEntry(i);	//	grab energy info
-		il = (Int_t) label;	//	convert label to integer
-		c = f->getChannel(il);	//	set channel
-		f->getH1("HitPattern0")->Fill(il);	//	hit pattern
+		bigTree->GetEntry(i);	//	grab entry
 
-		if( c ) {	//	skip unknown channels
+		if( !movedFlag ) {	//	construct events based on those in the correct position
 
-			timeb = timeb + timeOffset;	//	adjust timeb to include offset
-			s = to_string(il);	//	get channel number stored as string
-			nrjadj = c->adjE(nrj);	//	calibrate nrj
-			nrj2adj = c->adjE(nrj2);	//	calibrate nrj2
-			timeSinceB = (timeb-timeLastB-c->getTOffset())%bpt;	//	store aligned time
-			unadjT = (timeb-timeLastB)%bpt;	//	store unadjusted time
-			f->getH1("timeC" + s)->Fill(unadjT);	//	add to time histogram
-			npixel = c->getPixelNumber();	//	store pixel
+			movedEntrySize = movedEntry->size();	//	store size for loop
 
-			if( npixel > 0 )	{	//	neutron gate alternatively il>10&&il<90&&(il%10>0&&il%10<9)
+			for( ULong64_t j = 0; j < movedEntrySize; j++ ) {	//	get entry by map
 
-				f->getH2("timeVneutrons0")->Fill(unadjT, npixel);	//	neutron channels V time
+				bigTree->GetEntry((*movedEntry)[j]);	//	grab ordered entry
+				il = (Int_t) label;	//	convert label to integer
+				c = f->getChannel(il);	//	set channel
+				f->getH1("HitPatternAll0")->Fill(il);	//	hit pattern
 
-				if( c->passes(timeSinceB, 't') ){//&& c->passes(nrjadj, 'e') )	{	//	if passing channel gate
+				if( c ) {	//	skip unknown channels
 
-					f->getH2("NeutronRatePerPixel0")->Fill(timeb, npixel);	//	add hit to rate for pixel
-					f->getH2("pixels0")->Fill((npixel-1)%8, floor((npixel-1)/8));	//	fill hit pattern
-					f->getH1("HitPatternNeutrons0")->Fill(npixel);	//	neutrons hit pattern
-					f->getH2("neutronfluxatrx0")->Fill(xPos, rPos);	//	intensity of neutrons over positions
-					f->getH2("neutronfluxatrxCal0")->Fill(cX->adjE(xPos), cR->adjE(rPos), (double)1/(1+flux->size()));	//	intensity of calibrated
-					f->getH1("neutronfluxatx0")->Fill(xPos);	//	intensity of neutrons at x
-					f->getH1("neutronfluxatr0")->Fill(rPos);	//	intensity of neutrons at r
-					f->getH2("timeadjVneutrons0")->Fill(timeSinceB, npixel);	//	time adjusted V channel
-					f->getH1("nrjadjC" + s)->Fill(nrjadj);	//	add to nrj histogram
-					f->getH1("nrj2adjC" + s)->Fill(nrj2adj);	//	add to nrj2 histogram
-					f->getH2("nrjadjVchan0")->Fill(nrjadj, il);	//	energy V channel
-					f->getH2("nrj2adjVchan0")->Fill(nrj2adj, il);	//	nrj2 V channel
+					timebo = timeb + timeOffset;	//	offsetted time
+					timed = timebo - timeLastB;	//	adjust timeb to have most of modulo removed
 
-					if( timeLastB == timeLastBp )	{	//	if this entry belongs to current beam pulse
+					if( il == chanB )	//	if we have a beam channel
+						timeLastB = timebo;	//	update beam time
+					else if( timed > bpt && timeLastB ) {	//	else if we are due for a beam channel
 
-						if( timeLastB > 0 )	{	//	if the entry is after the first beam pulse
-							
-							coincidences.push_back(std::make_pair((Long64_t) timeSinceB, std::array<UInt_t,3>{(UInt_t)npixel, xPos, rPos}));	//	add time, pixel and position to vector
+						timeLastB = timebo - timed%bpt;	//	insert a fake beam time
+						timed = timebo - timeLastB;	//	readjust timeb to have most of modulo removed
 
-						}	//	end first beam pulse check
+					}	//	end simulated beam pulse
 
-					}	//	end check if beam pulse is the same
-					else	{	//	a new beam pulse
+					timeSinceB = (bpt + timed + c->getTOffset())%bpt;	//	store aligned time shifted to always lie between 0 and bpt
+					s = to_string(label);	//	get channel number stored as string instead of char array
+					npixel = c->getPixelNumber();	//	store pixel
+					nrjCal = c->adjE(nrj);	//	calibrate nrj
+					f->getH1("nrjRawC" + s)->Fill(nrj);	//	add to uncalibrated energy histogram
+					f->getH1("nrj2RawC" + s)->Fill(nrj2);	//	add to slow uncalibrated energy histogram
+					f->getH1("timeRawC" + s)->Fill(timed);	//	add to uncalibrated time histogram
+					f->getH1("rateRawC" + s)->Fill(timebo);	//	add to rate histogram
+#ifndef NOBEAM
+					f->getH3("nrjCalVtimeCal0")->Fill(nrjCal, timeSinceB, npixel);	//	corrected energy V corrected time
 
-						sort(coincidences.begin(), coincidences.end());	//	sort coincidences into time order
-						coincSize = coincidences.size();	//	store coincidence size
+					if( cxFlag && nrjCal && timeLastB ) {	//	if a real beam pulse has been seen
 
-						for( UInt_t j = 0; j < coincSize; j++ )	{	//	for each coincidence
+						if( npixel ) {	//	detector gate
+	#ifdef TIMEFULLCAL
+							tarr[(int)npixel] = timeb + timeOffset;	//	add time of hit to array
 
-							k = j + 1;	//	set k to next item start loop
-							neighbour = 0;	//	reset neighbour count
+							for(int k = 1; k < 65; k++)	//	for each pixel
+								if(tarr[k] > 0)	//	if we have registered a hit previously
+									f->getH3("neutronTimeByPixel0")->Fill(k, npixel, timeb + timeOffset - tarr[k]);	//	add to projection histogram
+	#else
+							if( c->passes(timeSinceB, 't') && c->passes(nrjCal, 'e') ) {	//	if passing channel gate
 
-							while( k < coincSize && coincidences[j].first > coincidences[k].first - coincWind )	{	//	check k is within vector limits and within time constant
+								f->getH3("nrjGtdVtimeGtd0")->Fill(nrjCal, timeSinceB, npixel);	//	gated corrected energy V gated corrected time
+								w = 1;	//	set weight to one to add real count
+								bgHist = "";	//	ensure normal histograms are filled
 
-								f->getH3("coincTimeMap0")->Fill( coincidences[j].second[0], coincidences[k].second[0], coincidences[k].first - coincidences[j].first );	//	fill coincidence pixel map for each time
-								neighbour += f->helper->neighbour(coincidences[j].second[0], coincidences[k].second[0]);	//	increment neighbour if there is one
-								k++;	//	increment k for next
+							}	//	end gate check
+							else {	//	we have background but want to adjust the gates, so do the above but with Bg histograms
 
-							}	//	end coincidence time check
+								w = -1 * c->gatesTcover(bpt);	//	set weight for background subtraction
+								bgHist = "Bg";	//	fill background histograms
 
-							if(neighbour < 9)	{	//	if a 'real' number of neighbours was seen
+							}
 
-								f->getH2("pixelsCleaned" + to_string(neighbour))->Fill((coincidences[j].second[0]-1)%8, floor((coincidences[j].second[0]-1)/8));	//	add to appropriate hit patten
+							if(npixel > 0) {	//	neutron gate alternatively il>10&&il<90&&(il%10>0&&il%10<9)
 
-							}	//	end real number of neighbours
-							else	{	//	fill overflow plot
+								f->getH2("pixels" + bgHist + "0")->Fill(((Int_t)npixel - 1)%8, floor(((Int_t)npixel - 1) / 8), w);	//	fill hit pattern
+								f->getH1("HitPatternNeutronGtd" + bgHist + "0")->Fill(npixel, w);	//	neutrons hit pattern
+								f->getH1("FluxRneutron" + bgHist + "0")->Fill(rposition, w);	//	intensity of neutrons at r
+								f->getH1("FluxXneutron" + bgHist + "0")->Fill(xposition, w);	//	intensity of neutrons at x
+								f->getH2("FluxXRneutron" + bgHist + "0")->Fill(xposition, rposition, w);	//	intensity of neutrons over positions
+								objectImg(f->getH2("Objectneutron" + bgHist + "0"), w);	//	make object
 
-								f->getH2("pixelsCleaned9")->Fill((coincidences[j].second[0]-1)%8, floor((coincidences[j].second[0]-1)/8));	//	overflow hit pattern
+							}	//	end neutron check
+							else {	//	must be a germanium channel
 
-							}	//	end neighbour hit patterns
+								f->getH1("FluxRgamma" + bgHist + "0")->Fill(rposition, w);	//	intensity of gammas at r
+								f->getH1("FluxXgamma" + bgHist + "0")->Fill(xposition, w);	//	intensity of gammas at x
+								f->getH2("FluxXRgamma" + bgHist + "0")->Fill(xposition, rposition, w);	//	intensity of gammas over positions
+								f->getH3("XRgamma" + bgHist + "0")->Fill(xposition, rposition, nrjCal, w);	//	XY-plane against energy
+								gateSpecif = c->passes(nrjCal, 'G', 0);	//	get the gate pass as specific gate
 
-						}	//	end coincidence check for loop
+								if(gateSpecif)	//	if we have an interesting gamma
+									objectImg(f->getH2("Objectgamma" + bgHist + "G" + std::to_string(gateSpecif)), w);	//	make object
 
-						coincidences.clear();	//	reset coincidences vector
+							}	//	end germanium fills
 
-					}	//	end check of new beam pulse
+							if( timeLastB == timeLastBp ) {	//	if this entry belongs to current beam pulse
 
-					timeLastBp = timeLastB;	//	store this beam pulse time for a valid neutron for comparisons
+								if( timeLastB > 0 )	//	if the entry is after the first beam pulse
+									coincidences.push_back({timeSinceB, {c, nrjCal}});	//	add time since beam, channel, and energy to vector
 
-				}	//	end neutron gate check
+							}	//	end check if beam pulse is the same
+							else {	//	a new beam pulse
 
-			}	//	end neutron match
-			else if( npixel < 0 )	{	//	check for germanium
+								sort(coincidences.begin(), coincidences.end());	//	sort coincidences into time order
+								coincSize = coincidences.size();	//	store coincidence size
 
-				npixel = abs(npixel);	//	adjust npixel to number
-				f->getH1("TotalGammaFlux0")->Fill(timeb);	//	add gamma count
+//								if( timeLastB < timeLastBp )	std::cout << std::endl << "Warning: Your coincidence vector is " << coincSize << " and possibly your beam pulses are out of order at " << i << " where timeLastB = " << timeLastB << " and previous timeLastB = " << timeLastBp << std::endl;	//	order check
+								for( UInt_t j = 0; j < coincSize; j++ ) {	//	for each coincidence
 
-				if( c->passes(nrjadj, 'e') )	{	//	if we pass the energy gate
+									k = j + 1;	//	set k to next item at the start of the loop
+									neighbour = 0;	//	reset neighbour count
+									addOnce = false;	//	set flag for adding to germanium one time only
+									npixelcj = coincidences[j].second.first->getPixelNumber();	//	get pixel number for first pixel
+									dtypej = coincidences[j].second.first->getType();	//	get detector type
 
-					flux->push_back(timeb);	//	add time
-					while( flux[0][0] < timeb - 1e13 && flux->size() > 0 )	flux->pop_front();	//	clear earlier entries in flux
-					f->getH1("GammaFlux0")->Fill(timeb);	//	add gamma count
+									while( k < coincSize ) {	//	check k is within vector limits and within time constant
 
-				}	//	end table edge check
+										npixelck = coincidences[k].second.first->getPixelNumber();	//	get pixel number for second pixel
+										dtypek = coincidences[k].second.first->getType();	//	fetch detector type for coincident pixel
+										gateNumber = coincidences[j].second.first->passes(coincidences[k].first, dtypek, 1);	//	get the gate pass as gate
+										gateSpecif = coincidences[j].second.first->passes(coincidences[k].first, dtypek, 0);	//	get the gate pass as specific gate
+										f->getH3("coincTimeMap0")->Fill( npixelcj, npixelck, coincidences[k].first - coincidences[j].first );	//	fill coincidence pixel map for each time
+										f->getH3("pixelsfiring0")->Fill(npixelcj, npixelck, gateNumber);	//	create maps of firing pixels in coincidence
 
-				if( c->passes(timeSinceB, 't') )	{	//	if passing channel gate
+										if( gateNumber ) {	//	only proceed if we passed a gate
 
-					f->getH2("timeadjVgammas0")->Fill(timeSinceB, npixel);	//	time adjusted V gamma
-					f->getH1("nrjadjC" + s)->Fill(nrjadj);	//	add to nrj histogram
-					f->getH1("nrj2adjC" + s)->Fill(nrj2adj);	//	add to nrj2 histogram
-					f->getH2("nrjadjVchan0")->Fill(nrjadj, il);	//	energy V channel
-					f->getH2("nrj2adjVchan0")->Fill(nrj2adj, il);	//	nrj2 V channel
+											if( npixelck > 0 ) {	//	if it is a neutron channel do further checks
 
-				}	//	end gamma gate check
+												if( !gateFlag[{signbit(npixelcj), gateNumber}] /*&& ( (npixelcj > 0 && gateSpecif == gateNumber) || (npixelcj < 0 && gateSpecif) )*/ ) {	//	if we have a clean event here coupled with a suitable parent event
 
-			}	//	end pixels
+													gateFlag[{signbit(npixelcj),gateNumber}] = f->getH2("nrjCoiVtimeCoiGate" + std::to_string(gateNumber) + "C" + std::to_string(coincidences[j].second.first->getChannelNumber()))->Fill(coincidences[j].second.second, coincidences[j].first);	//	fill neutron if followed by neutron or gamma if followed by neutron and do not fire on this gate again
 
-			if(	il == chanX )	{	//	do stuff with the x position
+													if(npixelcj > 0)	//	if we have a neutron
+														neighbour += f->helper->neighbour(npixelcj, npixelck);	//	increment neighbour if there is one
+													else if( !addOnce && gateSpecif )	//	 if we have not added a gamma yet
+														addOnce = 0 * f->getH2("nrjCoiVtimeCoiGateG0")->Fill(coincidences[j].second.second, coincidences[j].first);	//	add to a map which will not repeat
 
-				f->getH2("xVtime0")->Fill(timeb, nrj);	//	x position V time
+												}	//	end neutron checks
 
-			}	//	end doing stuff with x
+											}	//	end neutron channel check
+											else if( !gammaFlag[k] && npixelcj > 0 && gateSpecif )	//	result is a neutron followed by gamma
+													gammaFlag[k] = f->getH2("nrjCoiVtimeCoiGate" + std::to_string(gateSpecif) + "C" + std::to_string(std::abs((Int_t)npixelck)))->Fill(coincidences[k].second.second, coincidences[k].first);	//	fill gamma following neutron and do not fire on this flag again
 
-			if(	il == chanR )	{	//	do stuff with the theta position
+										}	//	end gate logic
 
-				f->getH2("rVtime0")->Fill(timeb, nrj);	//	theta position V time
+										k++;	//	increment k for next
 
-			}	//	end doing stuff with theta
+									}	//	end coincidence time check
 
-			f->getH1("nrjC" + s)->Fill(nrj);	//	add to nrj histogram
-			f->getH1("nrj2C" + s)->Fill(nrj2);	//	add to nrj2 histogram
-			f->getH2("nrjVchan0")->Fill(nrjadj, il);	//	nrj V time
-			f->getH2("nrj2Vchan0")->Fill(nrj2, il);	//	nrj2 V time
-			f->getH2("timeVchan0")->Fill(unadjT, il);	//	channel V time
-			f->getH2("nrjVtime" + s)->Fill(unadjT, nrj);	//	energy V time
-			f->getH2("nrj2Vtime" + s)->Fill(unadjT, nrj2);	//	nrj2 V time
-			f->getH1("timeadjC" + s)->Fill(timeSinceB);	//	add to adjusted time histogram
-			f->getH2("timeadjVchan0")->Fill(timeSinceB, il);	//	channel V channel
-			f->getH2("nrjadjVtimeadj" + s)->Fill(timeSinceB, nrjadj);	//	corrected energy V time
-			f->getH2("nrjadjVchan0")->Fill(nrjadj, il);	//	corrected nrj V time
+									if( npixelcj > 0 ) {	//	check if we have a neutron pixel which is quicker than the methods below filling below zero
 
-		}	//	end valid channel check
+										if(neighbour)	//	if we see a neighbour
+											objectImg(f->getH2("ObjectneutronCoi0"));	//	make neutron object from this coincident guy
+
+										if(neighbour < 9)	//	if a 'real' number of neighbours was seen
+											f->getH2("pixelsNeighbours" + to_string(neighbour))->Fill((npixelcj-1)%8, floor((npixelcj-1)/8));	//	add to appropriate hit patten
+										else	//	fill overflow plot
+											f->getH2("pixelsNeighbours9")->Fill((npixelcj-1)%8, floor((npixelcj-1)/8));	//	overflow hit pattern
+
+									}	//	end neutron pixel check
+
+								}	//	end coincidence check for loop
+
+								coincidences.clear();	//	reset coincidences vector
+								gateFlag.clear();
+								gammaFlag.clear();
+
+							}	//	end check of new beam pulse
+
+							timeLastBp = timeLastB;	//	store this beam pulse time for a valid neutron for comparisons
+
+						}	//	end pixel checks
+						else if( signbit(npixel) ) {	//	LaBr3 as -0 fails first check
+
+							f->getH1("FluxRlabr0")->Fill(rposition);	//	intensity of gammas at r
+							f->getH1("FluxXlabr0")->Fill(xposition);	//	intensity of gammas at x
+							f->getH2("FluxXRlabr0")->Fill(xposition, rposition);	//	intensity of gammas over positions
+							f->getH3("XRlabr0")->Fill(xposition, rposition, nrjCal);	//	XY-plane against energy
+	#endif
+						}	//	end doing stuff with LaBr3
+
+					}	//	detector operations
+
+					if( il == chanX )	//	if we have an x channel
+						setX(nrj);	//	set x position
+					else if( il == chanR )	//	if we have a radius channel
+						setR(nrj);	//	set r position
+#endif
+				}	//	end valid channel check
+
+			}	//	end reordered index loop
+
+		}	//	check if entry matches real index
 
 	}	//	end loop over all entries
 
-}	//	end do_analysis( FNT* f )
+}	//	end doAnalysis( FNT* f )
 
 
-void analysis::histogram_operations(fnt::FNT* f) {	//	start histogram alterations
+void analysis::histogramOperations(fnt::FNT* f) {	//	start histogram alterations
 
 	TDirectory* d;	//	hold value for directories
 	TH1D* h;	//	hold value for histogram to move
 	std::string s;	//	string for histograms
 
-	for( string folder : f->getFolders() )	{	//	for each folder
+	for( string folder : f->getFolders() ) {	//	for each folder
 
 		std::cout << "Moving histograms to hists_" << folder << " folder..." << std::endl;	//	inform user
 		d = newHists->mkdir(("hists_" + folder).c_str());	//	make a folder
@@ -180,9 +233,9 @@ void analysis::histogram_operations(fnt::FNT* f) {	//	start histogram alteration
 
 			if( h ) {	//	if histogram exists
 
-				if( folder == "timeC" || folder == "nrjC" )	{	//	if time or energy spectrum
+				if( ( folder == "timeCalC" || folder == "nrjCalC" ) && h->GetEntries() > 0 ) {	//	if time or energy spectrum
 
-//					f->helper->peakf(h, folder);	//	get peak positions
+					f->helper->peakf(h, folder);	//	get peak positions
 
 				}	//	end time spectrum specialisations
 
@@ -195,10 +248,52 @@ void analysis::histogram_operations(fnt::FNT* f) {	//	start histogram alteration
 
 	}	//	end for loop over each folder
 
-}	//	end histogram_operations( FNT* f )
+}	//	end histogramOperations( FNT* f )
 
 
-void analysis::histogram_pretty(TTree* bigTree) {	//	output a colourful hit pattern
+void analysis::objectImg( TH2D* h, Double_t w /* = 1 */ ) {	//	image maker
+
+	for(double yd = -0.; yd < tableSizeDiff; yd += objStep) {	//	for a small step in our circle
+
+		h->Fill(XcosR + (yd*sinrpos), XsinR - (yd*cosrpos), w);	//	object histogram
+		yd = -1 * yd - !signbit(yd) * objStep;	//	repeat for the negative value of yd
+
+	}	//	end object maker loop
+
+}	//	end objectImg( TH2D* h )
+
+
+
+void analysis::setR(Int_t n) {	//	set r positions( nrj )
+
+	rposition = n;	//	set rposition variable
+	rcal = (n -  2320.) / 36194.858;	//	calibrate r
+	sinrpos = sin(rcal);	//	set sin of rcal
+	cosrpos = cos(rcal);	//	set cos of rcal
+	setTrig();	//	set numbers used in functions
+
+};	//	set r positions
+
+
+void analysis::setX(Int_t n) {	//	set x positions( nrj )
+
+	xposition = n;	//	set xposition variable
+	xcal = (n - 18877.) / 6154.1 - 15.;	//	calibrate x
+	tableSizeDiff = sqrt(tableSize - xcal*xcal);	//	set loop maximum
+	setTrig();	//	set numbers used in functions
+	cxFlag = cX->passes(xposition, 'e');	//	set gate flag of position
+
+};	//	set x positions( Int_t )
+
+
+void analysis::setTrig() {	//	set sin and cos
+
+	XsinR = xcal * sinrpos;	//	for use in relevant loops
+	XcosR = xcal * cosrpos;	//	for use in relevant loops
+
+}	//	end setting of trigonometric variables
+
+/*void analysis::histogramPretty(TTree* bigTree) {	//	output a colourful hit pattern
 
 	std::cout << "Starting colourful hit pattern now...it's not efficient so it will take some time, I think it is with nlogn not n!" << std::endl;
 	Int_t bins[3] = {256, 0, 255};	//	histogram {bin count, X minimum, X maximum}
@@ -223,7 +318,7 @@ void analysis::histogram_pretty(TTree* bigTree) {	//	output a colourful hit patt
 	std::cout << "Colourful hit pattern is done!" << std::endl;	//	inform user
 
 }	//	end colourful hit pattern
-
+*/
 
 }	//	end namespace fnt
 
