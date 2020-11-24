@@ -1,2 +1,0 @@
-This is simply a list of paths to files that you want to use to make your root file; make sure to keep the last line clear!
-/mnt/d/fnt/newrootfiles/like_this.root

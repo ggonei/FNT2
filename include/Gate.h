@@ -11,21 +11,22 @@ namespace fnt {	//	create unique working area
 class Gate {	//	object for channels
 
 	public:
-		Gate(char c, ULong64_t min, ULong64_t max) {	//	default constructor
+		Gate(char c, unsigned long long min, unsigned long long max) {	//	default constructor
 			type = c;	//	set gate type
 			low = min;	//	set gate minimum
 			high = max;	//	set gate maximum
 		}	//	end default constructor
 		~Gate() {}	//	destructor
 		
-		ULong64_t min() { return low; }	//	get gate minimum
-		ULong64_t max() { return high; }	//	get gate maximum
-		Double_t percentage(Double_t n) { return (high - low) / n; }	//	get percentage covered
-		bool passes( ULong64_t e ) { return (low <= e && high >= e); }	//	check if energy is inside gate( energy )		
+		unsigned long long min() { return low; }	//	get gate minimum
+		unsigned long long max() { return high; }	//	get gate maximum
+		double percentage(double n) { return (double)(high - low) / n; }	//	get percentage covered
+		bool passes( double e ) { return ((double)low <= e && (double)high >= e); }	//	check if number is inside gate for calibrated entries		
+		bool passes( unsigned long long e ) { return (low <= e && high >= e); }	//	check if number is inside gate for raw entries or time
 
 	private:
 		char type;	//	gate type
-		ULong64_t low, high;	//	gate minimum, maximum
+		unsigned long long low, high;	//	gate minimum, maximum
 
 	};
 

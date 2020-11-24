@@ -1,9 +1,11 @@
 # FNT2
 Fast Neutron Tomography sort code
 
-It compiles on the command line (although that will be slowest):
+It compiles on the command line:
 
  root -l src/Helper.cpp+ src/Gate.cpp+ src/Channel.cpp+ src/FNT.cpp+ src/analysis.cpp+ fntsort.cpp+
+
+Alternatively, run the makefile with 'make' for a 5-10% speed boost
 
 # Speed
 unordered_map is a hash table and faster than map here but does require C11, so switch to map on old systems

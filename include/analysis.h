@@ -17,7 +17,7 @@ namespace fnt {	//	create unique working area
 class analysis {	//	main analysis object
 
 	public:
-		analysis(fnt::FNT* f)	{	//	default constructor
+		analysis(FNT* f)	{	//	default constructor
 			std::cout << "Analysis object " << f << " has compiled successfully, continuing bespoke analysis from analysis.cpp..." << std::endl;	//	informative message
 			newHists = f->histFile();	//	get histogram root file
 			bigTree = f->getTree();	//	get big tree
@@ -46,29 +46,29 @@ class analysis {	//	main analysis object
 		}	//	end default constructor
 		~analysis() {}	//	destructor
 
-		void doAnalysis(fnt::FNT* f);	//	analysis function( FNT* tree )
+		void doAnalysis(FNT* f);	//	analysis function( FNT* tree )
 		void histogramOperations(fnt::FNT* f);	//	histogram manipulation( FNT* tree )
-		void objectImg(TH2D* h, Double_t w = 1);	//	object image maker( TH2D* histogram, Double_t weight = 1 )
+		void objectImg(TH2D* h, double w = 1);	//	object image maker( TH2D* histogram, double weight = 1 )
 //		void histogramPretty(TTree* bigTree);	//	colourful hit pattern
-		void setR(Int_t n);	//	set r positions( Int_t nrj )
-		void setX(Int_t n);	//	set x positions( Int_t nrj )
+		void setR(int n);	//	set r positions( int nrj )
+		void setX(int n);	//	set x positions( int nrj )
 		void setTrig();	//	set trigonometric variables
 
 
 	private:
-		const Double_t tableSize = 225.;	//	squared diameter of table in centimetres
-		const Double_t objStep = 0.1;	//	object step size for smearing
-		static const Int_t bpt = 400000;	//	time between beam pulses in ps ticks
+		const double tableSize = 225.;	//	squared diameter of table in centimetres
+		const double objStep = 0.1;	//	object step size for smearing
+		static const int bpt = 400000;	//	time between beam pulses in ps ticks
 		TChain* bigTree;	//	main tree
 		TFile* newHists;	//	histogram root file
 		Channel* cX;	//	allocate position channel pointer
 		Bool_t movedFlag, cxFlag;	//	moved flag, in the interesting object region flag
-		Double_t rcal, xcal, sinrpos, cosrpos, XsinR, XcosR, tableSizeDiff;	//	trigonometric holders
-		Int_t chanB, chanR, chanX, il, xposition = -1, rposition = -1;	//	integer conversion of beam time, theta channel, x channel, label
+		double rcal, xcal, sinrpos, cosrpos, XsinR, XcosR, tableSizeDiff;	//	trigonometric holders
+		int chanB, chanR, chanX, il, xposition = -1, rposition = -1;	//	integer conversion of beam time, theta channel, x channel, label
 		UChar_t label;	//	initialise variable to store labels
-		UInt_t gmc, nrj, nrj2;	//	initialise variables to store maximum channel, nrj, nrj2
-		ULong64_t timeb, timeOffset, n;	//	initialise time branch variable, time offset, number of entries
-		std::vector<ULong64_t> *movedEntry = 0;	//	list of moved entries
+		unsigned int gmc, nrj, nrj2;	//	initialise variables to store maximum channel, nrj, nrj2
+		unsigned long long timeb, timeOffset, n;	//	initialise time branch variable, time offset, number of entries
+		std::vector<unsigned long long> *movedEntry = 0;	//	list of moved entries
 
 };	//	end class analysis
 

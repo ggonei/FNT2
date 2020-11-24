@@ -8,18 +8,18 @@
 namespace fnt {	//	create unique working area
 
 
-void Channel::addCalibration(Int_t t, char c, vector<Double_t> vc, vector<Double_t> ve) {	//	add calibration( offset, type, energy, efficiency )
+void Channel::addCalibration(int t, char c, std::vector<double> vc, std::vector<double> ve) {	//	add calibration( offset, type, energy, efficiency )
 
 	timeOffset = t;	//	set time offset
 	calType = c;	//	set calibration type
 	calTerms = vc;	//	set calibration terms
 	effTerms = ve;	//	set efficiency terms
 
-}	//	end addCalibration(short c, char v, vector<Double_t> t)
+}	//	end addCalibration(short c, char v, std::vector<double> t)
 
 
 
-void Channel::addGate(char c, ULong64_t low, ULong64_t high) {	//	add gate( type, low, high )
+void Channel::addGate(char c, unsigned long long low, unsigned long long high) {	//	add gate( type, low, high )
 
 	Gate* g = new Gate(c, low, high);	//	create new gate
 
@@ -27,19 +27,19 @@ void Channel::addGate(char c, ULong64_t low, ULong64_t high) {	//	add gate( type
 	else if( c == 't' )	gates_t.push_back( g );	//	add gate to time collection
 	else if( c == 'c' || c >= 'A' || c <= 'Z' )	gates_c.push_back( {g, c} );	//	add gate to coincidence collection
 
-}	//	end addGate( char c, ULong64_t low, ULong64_t high )
+}	//	end addGate( char c, unsigned long long low, unsigned long long high )
 
 
 
-Double_t Channel::adjE(Double_t e) {	//	adjust energy with a calibration( energy )
+double Channel::adjE(double e) {	//	adjust energy with a calibration( energy )
 
-	Double_t x = 0;	//	value to return defaulted if none passed to referenced energy
+	double x = 0;	//	value to return defaulted if none passed to referenced energy
 
 	if( calType == 'P' ) {	//	polynomial Ax^N + Bx^(N-1) ... + C
 
-		Double_t hold = 0;	//	hold all values to do the calculation
+		double hold = 0;	//	hold all values to do the calculation
 
-		for( UInt_t i = 0; i < calTerms.size(); i++ ) {	//	loop over vector of calibration terms
+		for( unsigned int i = 0; i < calTerms.size(); i++ ) {	//	loop over vector of calibration terms
 			hold = calTerms[i] * ( pow(e, i) );	//	A*x^N
 			x += hold;	//	add calculated term to total
 		}	//	close loop over vector of calibration terms
@@ -58,46 +58,47 @@ Double_t Channel::adjE(Double_t e) {	//	adjust energy with a calibration( energy
 
 	return x;	//	return corrected energy
 
-}	//	end adjE( Double_t e )
+}	//	end adjE( double e )
 
 
 
-Int_t Channel::passes(Double_t e, char t/* = 'e'*/, bool a/* = false*/) {	//	check if energy is inside a gate( energy, type = energy, absolute = false)
+int Channel::passes(double e, char t/* = 'e'*/, bool a/* = false*/) {	//	check if energy is inside a gate( energy, type = energy, absolute = false)
+
+	long unsigned int s;	//	gate size holder
 
 	if( t != 'e' && t != 't' ) {	//	coincidence gate
 
-		Int_t j = 0;	//	counter
-		Int_t s = gates_c.size();	//	get number of gates
+		int j = 0;	//	counter
+		s = gates_c.size();	//	get number of gates
 
 		if( !s )	//	if there are no gates
 			return -1;	//	then it must pass
 		else	//	we must have gates
-			for( Int_t i = 0; i < s; i++ )	//	so for each gate
+			for( long unsigned int i = 0; i < s; i++ )	//	so for each gate
 				if( (gates_c[i].second == t || (gates_c[i].second == 'N' && (t == 'C' || t == 'M')) || gates_c[i].second == 'c' ) && ++j && gates_c[i].first->passes(e) )	//	if the type matches and gate passes
-					return (a ? ++i : j);	//	then tell user which one it passed at
+					return (int)(a ? ++i : j);	//	then tell user which one it passed at
 
 	}	//	end coincidence check
 	else {	//	energy or time gate
 
-		vector<Gate*>* v = &(t == 'e' ? gates_e : gates_t);	//	use correct gate collection
-		Int_t s = v->size();	//	get number of gates
+		std::vector<Gate*>* v = &(t == 'e' ? gates_e : gates_t);	//	use correct gate collection
+		s = v->size();	//	get number of gates
 
 		if( !s )	//	if there are no gates
 			return -1;	//	then it must pass
 		else	//	we must have gates
-			for( Int_t i = 0; i < s; i++ )	//	so for each gate
+			for( long unsigned int i = 0; i < s; i++ )	//	so for each gate
 				if( (*v)[i]->passes(e) )	//	if any pass
-					return i + 1;	//	then tell user which one it passed at
+					return (int)i + 1;	//	then tell user which one it passed at
 
 	}	//	end gate type check
 
 	return false;	//	if we are here we did not succeed in the for loop
 
-}	//	end passes( Double_t e, char t, bool a )
+}	//	end passes( double e, char t, bool a )
 
 
 }	//	end namespace fnt
 
 
-
-void Channel(){};	//	allow root compilation
+void Channel(){}	//	allow root compilation
