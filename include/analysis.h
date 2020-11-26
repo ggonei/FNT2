@@ -7,7 +7,7 @@
 #define ANALYSIS_H
 #include "../include/FNT.h"
 
-//	ROOT libraries needed for histogram_pretty
+//	ROOT libraries needed for histogramPretty
 //#include <TCanvas.h>
 //#include <THStack.h>
 //#include <TLegend.h>

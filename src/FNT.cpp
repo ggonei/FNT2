@@ -15,7 +15,7 @@ const std::string FNT::fileHisto = filePrefix + "histos.txt";	//	path to channel
 
 FNT::FNT(const char* f, const char* h)	{	//	default constructor
 
-	unsigned long long jEntry, timeb, timerunstart = -1, tprevious = 0, thist = 0, tOffset = 0;	//	initialise entry store, time branch variable, run starting time, previous entry time, this combined time time offset
+	unsigned long long jEntry, timeb, timerunstart = -1, tprevious = 0, tpreviousnoO = 0, thist = 0, tOffset = 0;	//	initialise entry store, time branch variable, run starting time, previous entry time, previous time without offset, this combined time time offset
 	std::cout << "Tree output is in " << f << " and histograms will be saved in " << h << std::endl;	//	tell user some basic info
 	filename = f;	//	set tree filename
 	fileRootH = h;	//	set histogram filename
@@ -39,6 +39,7 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 		tree->AddFriend(indexTree);	//	add index branch to existing data
 		tree->SetBranchAddress("time", &timeb);	//	set address to store time
 		nEntries = tree->GetEntries();	//	initialise number of entries
+		std::cout << "Number of entries:	" << nEntries << std::endl;	//	inform user of number of entries
 		helper = new Helper(nEntries);	//	required for countdown
 
 		for( unsigned long long i = 0; i < nEntries; i++, jEntry = i ) {	//	loop over all entries
@@ -46,12 +47,12 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 			helper->countdown();	//	print progress
 			tree->GetEntry(i);	//	grab entry
 
-			if( timeb < timerunstart ) {	//	look for clock reset
+			if( (timeb < 1000000000000 && tpreviousnoO  > 1000000000000) || timeb < timerunstart ) {	//	look for clock reset
 
 				if( i ) {	//	we are past the first entry
 
-					std::cout << std::endl << "Clock has been reset at time " << timeb << " (old time " << timerunstart << ") on entry number " << i << ", changing offset from " << tOffset << " to " << tOffset + tprevious << std::endl;	//	inform user and write out a new line to step out of counter
-					tOffset += tprevious;	//	get time offset for use in setting beam pulse time
+					std::cout << std::endl << "Clock has been reset at time " << timeb << " (old run time " << timerunstart << ", old timeb " << tpreviousnoO << ") on entry number " << i << ", changing offset from " << tOffset << " to " << tOffset + tpreviousnoO - timeb << std::endl;	//	inform user and write out a new line to step out of counter
+					tOffset += tpreviousnoO - timeb;	//	get time offset for use in setting beam pulse time
 					setTimeOffset(tOffset);	//	set time offset
 
 				}	//	end offset update
@@ -79,6 +80,7 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 
 			}	//	set values up for next time check
 
+			tpreviousnoO = timeb;	//	store time without offset
 			addedTree->Fill();	//	fill new branches
 
 		}	//	end loop over all entries
@@ -110,26 +112,23 @@ FNT::FNT(const char* f, const char* h)	{	//	default constructor
 		}	//	end loop to add shift entry key
 
 		eindex.clear();	//	free up memory with no delete method available
-		std::cout << std::endl << "Added index for " << movedCtr << " moved entries after " << eindex.size() << " entries in " << TS.CpuTime() << "s (which is " << TS.RealTime() << "s in real time)" << std::endl;	//	profiler output
+		std::cout << std::endl << "Added index for " << movedCtr << " moved entries after " << eindex.size() << " entries in " << TS.CpuTime() << "s (which is " << TS.RealTime() << "s in real time), now our tree should exist" << std::endl;	//	profiler output
 		addedTree->Write("", TObject::kOverwrite);	//	Write new tree to file
 		indexTree->Write("", TObject::kOverwrite);	//	Write index to file
 		tree->Write("", TObject::kOverwrite);	//	Write main tree to file
+		file->Close();	//	close properly
 
-	}	//	file exists
-	else {	//	file does exist
+	}	//	end file does not exist
 
-		std::cout << "Tree exists, using " << filename << std::endl;	//	inform user we are using existing tree
-		file = TFile::Open(filename);	//	load previous file
-		tree = (TChain*)file->Get("DataTree");	//	load tree
-		addedTree = tree->GetFriend("newTree");	//	load new tree
-		indexTree = tree->GetFriend("iTree");	//	load new tree
-		tree->SetBranchAddress("time", &timeb);	//	set address to store time
-		nEntries = tree->GetEntries();	//	initialise number of entries
-		helper = new Helper(nEntries);	//	required for countdown
-		std::cout << "Tree loaded in " << TS.CpuTime() << "s (which is " << TS.RealTime() << "s in real time)" << std::endl;	//	profiler output
-
-	}	//	end tree load
-
+	std::cout << "Tree exists, using " << filename << std::endl;	//	inform user we are using existing tree
+	file = TFile::Open(filename);	//	load previous file
+	tree = (TChain*)file->Get("DataTree");	//	load tree
+	addedTree = tree->GetFriend("newTree");	//	load new tree
+	indexTree = tree->GetFriend("iTree");	//	load new tree
+	tree->SetBranchAddress("time", &timeb);	//	set address to store time
+	nEntries = tree->GetEntries();	//	initialise number of entries
+	helper = new Helper(nEntries);	//	required for countdown
+	std::cout << "Tree loaded in " << TS.CpuTime() << "s (which is " << TS.RealTime() << "s in real time)" << std::endl;	//	profiler output
 	jEntry = 1;	//	start check from the second entry as first entry is often strange
 	tree->GetEntry(jEntry);	//	reset entry position
 
