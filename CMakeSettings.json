@@ -16,6 +16,8 @@
 			],
 			"wslPath": "${defaultWSLPath}",
 			"addressSanitizerRuntimeFlags": "detect_leaks=0",
+			"enableClangTidyCodeAnalysis": true,
+			"enableMicrosoftCodeAnalysis": true,
 			"variables":
 			[
 				{
@@ -58,7 +60,7 @@
 				},
 				{
 					"name": "CMAKE_EXE_LINKER_FLAGS",
-					"value": "-m64 -O3 -rdynamic -L/home/gon/root_install/lib -Wl,-rpath -Wl,/home/gon/root_install/lib -Wl,--no-as-needed -lCore -lThread -ltbb -lImt -lRIO -lMathCore -lMatrix -lHist",
+					"value": "-m64 -O3 -rdynamic -pthread -L/home/gon/root_install/lib -Wl,-rpath -Wl,/home/gon/root_install/lib -Wl,--no-as-needed -lCore -lThread -ltbb -lImt -lRIO -lMathCore -lMatrix -lNet -lHist -lTree -lSpectrum",
 					"type": "STRING"
 				}
 			],
