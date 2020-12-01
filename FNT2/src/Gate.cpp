@@ -10,4 +10,4 @@ namespace fnt {	//	create unique working area
 }	//	end namespace fnt
 
 
-void Gate(){}	//	allow root compilation
+void Gate() {}	//	allow root compilation
