@@ -1,0 +1,68 @@
+﻿{
+	"configurations": [
+		{
+			"name": "GCC-Debug",
+			"generator": "Ninja",
+			"configurationType": "Debug",
+			"buildRoot": "${projectDir}\\out\\build\\${name}",
+			"installRoot": "${projectDir}\\out\\install\\${name}",
+			"cmakeExecutable": "cmake",
+			"cmakeCommandArgs": "",
+			"buildCommandArgs": " | sed -r -e \"s/\\/usr\\/bin\\/ld: /ld:\\n/\" -r -e \"s/:([[:digit:]]+):([[:digit:]]+):/(\\1,\\2) : error C1234:/\" -e \"s/:([[:digit:]]+):/(\\1) : error C1234:/\" -e \"s/\\/mnt\\/c/C:/\" -e \"s/\\\\//\\\\\\\\/g\"; $(exit ${PIPESTATUS})",
+			"ctestCommandArgs": "",
+			"inheritEnvironments":
+			[
+				"linux_x64"
+			],
+			"wslPath": "${defaultWSLPath}",
+			"addressSanitizerRuntimeFlags": "detect_leaks=0",
+			"variables":
+			[
+				{
+					"name": "CMAKE_CXX_FLAGS",
+					"value": "-g -m64 -pthread -isystem /home/gon/root_install/include -std=c++11 -I/home/gon/root_install/include -Wall -pedantic -pedantic-errors -Wextra -Werror -Wcast-align -Wcast-qual -Wchar-subscripts -Wcomment -Wconversion -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport -Winit-self -Winline -Winvalid-pch -Wlong-long -Wmissing-braces -Wmissing-field-initializers -Wmissing-format-attribute -Wmissing-include-dirs -Wmissing-noreturn -Wpacked -Wparentheses -Wpointer-arith -Wredundant-decls -Wreturn-type -Wsequence-point -Wshadow -Wsign-compare -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default -Wswitch-enum -Wtrigraphs -Wuninitialized -Wunknown-pragmas -Wunreachable-code -Wunused -Wunused-function -Wunused-label -Wunused-parameter -Wunused-value -Wunused-variable -Wvariadic-macros -Wvolatile-register-var -Wwrite-strings -Wno-long-long",
+					"type": "STRING"
+				},
+				{
+					"name": "CMAKE_EXE_LINKER_FLAGS",
+					"value": "-m64 -rdynamic -pthread -L/home/gon/root_install/lib -Wl,-rpath -Wl,/home/gon/root_install/lib -Wl,--no-as-needed -lCore -lThread -ltbb -lImt -lRIO -lMathCore -lMatrix -lNet -lHist -lTree -lSpectrum",
+					"type": "STRING"
+				}
+			],
+			"intelliSenseMode": "linux-gcc-x64"
+		},
+		{
+			"name": "GCC-Release",
+			"generator": "Ninja",
+			"configurationType": "Release",
+			"buildRoot": "${projectDir}\\out\\build\\${name}",
+			"installRoot": "${projectDir}\\out\\install\\${name}",
+			"cmakeExecutable": "cmake",
+			"cmakeCommandArgs": "",
+			"buildCommandArgs": " | sed -r -e \"s/\\/usr\\/bin\\/ld: /ld:\\n/\" -r -e \"s/:([[:digit:]]+):([[:digit:]]+):/(\\1,\\2) : error C1234:/\" -e \"s/:([[:digit:]]+):/(\\1) : error C1234:/\" -e \"s/\\/mnt\\/c/C:/\" -e \"s/\\\\//\\\\\\\\/g\"; $(exit ${PIPESTATUS})",
+			"ctestCommandArgs": "",
+			"inheritEnvironments":
+			[
+				"linux_x64"
+			],
+			"wslPath": "${defaultWSLPath}",
+			"addressSanitizerRuntimeFlags": "detect_leaks=0",
+			"enableClangTidyCodeAnalysis": true,
+			"enableMicrosoftCodeAnalysis": true,
+			"variables":
+			[
+				{
+					"name": "CMAKE_CXX_FLAGS",
+					"value": "-O3 -m64 -pthread -isystem /home/gon/root_install/include -std=c++11 -I/home/gon/root_install/include -Wall -pedantic -pedantic-errors -Wextra -Werror -Wcast-align -Wcast-qual -Wchar-subscripts -Wcomment -Wconversion -Wdisabled-optimization -Wfloat-equal -Wformat -Wformat=2 -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wimport -Winit-self -Winline -Winvalid-pch -Wlong-long -Wmissing-braces -Wmissing-field-initializers -Wmissing-format-attribute -Wmissing-include-dirs -Wmissing-noreturn -Wpacked -Wparentheses -Wpointer-arith -Wredundant-decls -Wreturn-type -Wsequence-point -Wshadow -Wsign-compare -Wstack-protector -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wswitch-default -Wswitch-enum -Wtrigraphs -Wuninitialized -Wunknown-pragmas -Wunreachable-code -Wunused -Wunused-function -Wunused-label -Wunused-parameter -Wunused-value -Wunused-variable -Wvariadic-macros -Wvolatile-register-var -Wwrite-strings -Wno-long-long",
+					"type": "STRING"
+				},
+				{
+					"name": "CMAKE_EXE_LINKER_FLAGS",
+					"value": "-m64 -O3 -rdynamic -L/home/gon/root_install/lib -Wl,-rpath -Wl,/home/gon/root_install/lib -Wl,--no-as-needed -lCore -lThread -ltbb -lImt -lRIO -lMathCore -lMatrix -lHist",
+					"type": "STRING"
+				}
+			],
+			"intelliSenseMode": "linux-gcc-x64"
+		}
+	]
+}

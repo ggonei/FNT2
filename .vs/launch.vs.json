@@ -1,0 +1,18 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "cppgdb",
+      "name": "FNT2 (FNT2\\FNT2)",
+      "project": "CMakeLists.txt",
+      "projectTarget": "FNT2 (FNT2\\FNT2)",
+      "debuggerConfiguration": "gdb",
+      "gdbPath": "/usr/bin/gdb -q --return-child-result -nx -ex 'set debug-file-directory /home/gon/root_install/lib'",
+      "targetArchitecture": "x86_64",
+      "comment": "Learn how to configure WSL debugging. See here for more info http://aka.ms/vslinuxdebug",
+      "args": [],
+      "env": {}
+    }
+  ]
+}
