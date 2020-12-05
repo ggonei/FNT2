@@ -13,7 +13,7 @@
 //	FNT2 libraries
 #include "../include/analysis.h"
 
-int main() {	//	main method will run when compiled
+int main(){	//	main method will run when compiled
 
 //	fnt::FNT* f = runfnt();	//	method that actually does stuff
 	new fnt::analysis( new fnt::FNT() );	//	perform analysis
@@ -22,4 +22,4 @@ int main() {	//	main method will run when compiled
 }	//	end main method for compilation
 
 
-void fntsort() {}	//	allow root compilation
+void fntsort(){}	//	allow root compilation

@@ -5,9 +5,9 @@
 //
 #include "../include/Gate.h"
 
-namespace fnt {	//	create unique working area
+namespace fnt{	//	create unique working area
 
 }	//	end namespace fnt
 
 
-void Gate() {}	//	allow root compilation
+void Gate(){}	//	allow root compilation
