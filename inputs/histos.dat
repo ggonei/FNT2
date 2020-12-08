@@ -11,6 +11,7 @@ Number	Name										X:Bins	Min	Max			Y:Bins	Min	Max			Z:Bins	Min	Max
    1		                pixels	      8	  0	      8	  8			  0	     8
   -0		  HitPatternNeutronGtd	     64	  1	     65
   -0		          FluxRneutron	 250000	  0	 250000
+  -0		      RealFluxRneutron	 250000	  0	 250000
   -0		          FluxXneutron	 250000	  0	 250000
    1		         FluxXRneutron	    500	  0	 250000	500			  0	250000
    1		         Objectneutron	    600	-15	     15	600			-15	    15
@@ -23,6 +24,7 @@ Number	Name										X:Bins	Min	Max			Y:Bins	Min	Max			Z:Bins	Min	Max
    1		              pixelsBg	      8	  0	      8	  8			  0	     8
   -0		HitPatternNeutronGtdBg	     64	  1	     65
   -0		        FluxRneutronBg	 250000	  0	 250000
+  -0		    RealFluxRneutronBg	 250000	  0	 250000
   -0		        FluxXneutronBg	 250000	  0	 250000
    1		       FluxXRneutronBg	    500	  0	 250000	500			  0	250000
    1		       ObjectneutronBg	    600	-15	     15	600			-15	    15
