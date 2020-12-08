@@ -109,7 +109,7 @@ void analysis::doAnalysis( FNT *f ){	//	start analysis
 									f->getH1( "FluxXgamma" + bgHist + "0" )->Fill( xposition, w );	//	intensity of gammas at x
 									f->getH2( "FluxXRgamma" + bgHist + "0" )->Fill( xposition, rposition, w );	//	intensity of gammas over positions
 									f->getH3( "XRgamma" + bgHist + "0" )->Fill( xposition, rposition, nrjCal, w );	//	XY-plane against energy
-									objectImg( nrjCal );	//	Fill object picture
+									objectImg( nrjCal, w );	//	Fill object picture
 									gateSpecif = c->passes( nrjCal, 'G', 0 );	//	get the gate pass as specific gate
 
 									if( gateSpecif )	//	if we have an interesting gamma
